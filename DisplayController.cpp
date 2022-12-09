@@ -339,7 +339,7 @@ void aboutUpdate(const Input& input)
         printfLCD(1, "%-16s", "Nicula Ionut 334");
     }
 
-    if (input.currentTs - state.timestamp > DURATION)
+    if (input.currentTs - state.beginTs > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
