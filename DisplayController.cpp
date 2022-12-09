@@ -25,8 +25,8 @@ static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
 
 static constexpr Tiny::Pair<void*, u16> SETTINGS_FROM_STORAGE[] = {
-    { &displayController.contrast, sizeof(displayController.contrast) },
-    { &displayController.brightness, sizeof(displayController.brightness) },
+    { &displayController.lcdContrast, sizeof(displayController.lcdContrast) },
+    { &displayController.lcdBrightness, sizeof(displayController.lcdBrightness) },
 };
 static constexpr State DEFAULT_MENU_STATE
     = { &mainMenuUpdate, 0, true, { .mainMenu = { 0 } } };
@@ -259,7 +259,7 @@ void settingsUpdate(const Input& input)
             {
                 .slider = {
                     "CONTRAST",
-                    &displayController.contrast,
+                    &displayController.lcdContrast,
                     0,
                     255,
                     &refreshContrast
@@ -273,7 +273,7 @@ void settingsUpdate(const Input& input)
             {
                 .slider = {
                     "BRIGHTNESS",
-                    &displayController.brightness,
+                    &displayController.lcdBrightness,
                     0,
                     255,
                     &refreshBrightness
@@ -383,8 +383,8 @@ void DisplayController::init()
     lcd.begin(NUM_COLS, NUM_ROWS);
     pinMode(CONTRAST_PIN, OUTPUT);
     pinMode(BRIGHTNESS_PIN, OUTPUT);
-    analogWrite(CONTRAST_PIN, i16(contrast));
-    analogWrite(BRIGHTNESS_PIN, i16(brightness));
+    analogWrite(CONTRAST_PIN, i16(lcdContrast));
+    analogWrite(BRIGHTNESS_PIN, i16(lcdBrightness));
 
     state = { greetUpdate, millis(), true, {} };
 }

@@ -4,8 +4,7 @@
 #include "LedControl.h"
 #include "LiquidCrystal.h"
 
-struct Input
-{
+struct Input {
     u32 currentTs;
     JoystickController::Press joyPress;
     JoystickController::Direction joyDir;
@@ -27,6 +26,13 @@ public:
         }
 
         i8 x, y;
+    };
+
+    struct LeaderboardEntry {
+        static constexpr u8 NAME_SIZE = 10;
+
+        char name[NAME_SIZE + 1];
+        i8 score;
     };
 
     struct MainMenuParams {
@@ -84,13 +90,15 @@ public:
     static constexpr u8 DEFAULT_CONTRAST = 90;
     static constexpr u8 DEFAULT_BRIGHTNESS = 255;
     static constexpr u8 DEFAULT_MATRIX_BRIGHTNESS = 255;
+    static constexpr u8 LEADERBOARD_SIZE = 5;
 
 public:
     LiquidCrystal lcd;
+    i32 lcdContrast;
+    i32 lcdBrightness;
     LedControl lc;
     State state;
-    i32 contrast;
-    i32 brightness;
+    LeaderboardEntry leaderboard[LEADERBOARD_SIZE];
 };
 
 extern DisplayController displayController;
