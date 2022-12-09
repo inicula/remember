@@ -67,12 +67,12 @@ static void writeEEPROM(const void* addr, size_t eepromBaseAddr, size_t count)
 
 void refreshContrast(const void* data)
 {
-    analogWrite(DisplayController::CONTRAST_PIN, int(*(const i32*)(data)));
+    analogWrite(DisplayController::CONTRAST_PIN, i16(*(const i32*)(data)));
 }
 
 void refreshBrightness(const void* data)
 {
-    analogWrite(DisplayController::BRIGHTNESS_PIN, int(*(const i32*)(data)));
+    analogWrite(DisplayController::BRIGHTNESS_PIN, i16(*(const i32*)(data)));
 }
 
 void greetUpdate(const Input& input)
