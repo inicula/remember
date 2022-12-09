@@ -348,9 +348,9 @@ void sliderUpdate(const Input& input)
     }
 
     const i32 delta = input.joyDir == JoystickController::Direction::Up
-        ? -1
-        : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
-    const auto newValue = Tiny::clamp(*params.value - STEP * delta, params.min, params.max);
+        ? 1
+        : (input.joyDir == JoystickController::Direction::Down ? -1 : 0);
+    const auto newValue = Tiny::clamp(*params.value + STEP * delta, params.min, params.max);
 
     if (*params.value != newValue) {
         *params.value = newValue;
