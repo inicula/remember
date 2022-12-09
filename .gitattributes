@@ -1,4 +1,4 @@
-**/Makefile -linguist-detectable
-**/*.mk -linguist-detectable
+Makefile -linguist-detectable
+*.mk -linguist-detectable
 
-**/*.ino linguist-language=cpp
+*.ino linguist-language=cpp
