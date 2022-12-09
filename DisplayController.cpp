@@ -12,8 +12,8 @@ static char printfBuffer[PRINTF_BUFSIZE] = {};
 
 template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
 
-static void readEEPROM(void*, size_t, size_t);
-static void writeEEPROM(const void*, size_t, size_t);
+static void readEEPROM(size_t, void*, size_t);
+static void writeEEPROM(size_t, const void*, size_t);
 static void refreshContrast(const void*);
 static void refreshBrightness(const void*);
 static void greetUpdate(const Input&);
@@ -46,17 +46,16 @@ template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&...
     displayController.lcd.print(&printfBuffer[0]);
 }
 
-static void readEEPROM(void* addr, size_t eepromBaseAddr, size_t count)
+static void readEEPROM(size_t eepromBaseAddr, void* addr, size_t count)
 {
     u8 buffer[count];
-
     for (size_t i = 0; i < count; ++i)
         buffer[i] = EEPROM.read(i16(eepromBaseAddr + i));
 
     memcpy(addr, &buffer[0], count);
 }
 
-static void writeEEPROM(const void* addr, size_t eepromBaseAddr, size_t count)
+static void writeEEPROM(size_t eepromBaseAddr, const void* addr, size_t count)
 {
     u8 buffer[count];
     memcpy(&buffer[0], addr, count);
@@ -305,7 +304,7 @@ void settingsUpdate(const Input& input)
 
         size_t eepromAddr = 0;
         for (auto pair : IN_STORAGE) {
-            writeEEPROM(pair.first, eepromAddr, pair.second);
+            writeEEPROM(eepromAddr, pair.first, pair.second);
             eepromAddr += pair.second;
         }
     }
@@ -383,7 +382,7 @@ void DisplayController::init()
 {
     size_t eepromAddr = 0;
     for (auto pair : IN_STORAGE) {
-        readEEPROM(pair.first, eepromAddr, pair.second);
+        readEEPROM(eepromAddr, pair.first, pair.second);
         eepromAddr += pair.second;
     }
 
