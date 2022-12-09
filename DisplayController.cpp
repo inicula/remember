@@ -24,12 +24,19 @@ static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
 
-static constexpr Tiny::Pair<void*, u16> SETTINGS_FROM_STORAGE[] = {
-    { &displayController.lcdContrast, sizeof(displayController.lcdContrast) },
+/* clang-format off */
+static constexpr Tiny::Pair<void*, u16> IN_STORAGE[] = {
+    { &displayController.lcdContrast,   sizeof(displayController.lcdContrast)   },
     { &displayController.lcdBrightness, sizeof(displayController.lcdBrightness) },
+    { &displayController.leaderboard,   sizeof(displayController.leaderboard)   },
 };
-static constexpr State DEFAULT_MENU_STATE
-    = { &mainMenuUpdate, 0, true, { .mainMenu = { 0 } } };
+static constexpr State DEFAULT_MENU_STATE = {
+    &mainMenuUpdate,
+    0,
+    true,
+    { .mainMenu = { 0 } },
+};
+/* clang-format on */
 
 template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&... args)
 {
@@ -232,9 +239,13 @@ void startGameUpdate(const Input& input)
         lc.clearDisplay(0);
 
         const auto score = params.score;
-        state = { gameOverUpdate, input.currentTs, true, {} };
-        state.params.gameOver.score
-            = score; /* Separately, otherwise internal compiler error */
+        state = { &gameOverUpdate, input.currentTs, true, {} };
+
+        /*
+         *  This union member needs to be assigned separately because of an internal compiler
+         *  error. See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59832
+         */
+        state.params.gameOver.score = score;
     }
 }
 
@@ -293,7 +304,7 @@ void settingsUpdate(const Input& input)
         printfLCD(1, "%-16s", SETTINGS_DESCRIPTORS[params.pos]);
 
         size_t eepromAddr = 0;
-        for (auto pair : SETTINGS_FROM_STORAGE) {
+        for (auto pair : IN_STORAGE) {
             writeEEPROM(pair.first, eepromAddr, pair.second);
             eepromAddr += pair.second;
         }
@@ -371,7 +382,7 @@ DisplayController::DisplayController()
 void DisplayController::init()
 {
     size_t eepromAddr = 0;
-    for (auto pair : SETTINGS_FROM_STORAGE) {
+    for (auto pair : IN_STORAGE) {
         readEEPROM(pair.first, eepromAddr, pair.second);
         eepromAddr += pair.second;
     }
@@ -386,7 +397,7 @@ void DisplayController::init()
     analogWrite(CONTRAST_PIN, i16(lcdContrast));
     analogWrite(BRIGHTNESS_PIN, i16(lcdBrightness));
 
-    state = { greetUpdate, millis(), true, {} };
+    state = { &greetUpdate, millis(), true, {} };
 }
 
 void DisplayController::update(const Input& input) { state.updateFunc(input); }
