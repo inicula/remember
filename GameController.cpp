@@ -1,11 +1,11 @@
-#include "DisplayController.hpp"
+#include "GameController.hpp"
 
-using State = DisplayController::State;
+using State = GameController::State;
 
-constexpr u8 DisplayController::DEFAULT_CONTRAST;
-constexpr u8 DisplayController::DEFAULT_BRIGHTNESS;
+constexpr u8 GameController::DEFAULT_CONTRAST;
+constexpr u8 GameController::DEFAULT_BRIGHTNESS;
 
-DisplayController displayController;
+GameController gameController;
 
 static constexpr u8 PRINTF_BUFSIZE = 17;
 static char printfBuffer[PRINTF_BUFSIZE] = {};
@@ -26,9 +26,9 @@ static void sliderUpdate(const Input&);
 
 /* clang-format off */
 static constexpr Tiny::Pair<void*, u16> IN_STORAGE[] = {
-    { &displayController.lcd.contrast,   sizeof(displayController.lcd.contrast)   },
-    { &displayController.lcd.brightness, sizeof(displayController.lcd.brightness) },
-    { &displayController.leaderboard,    sizeof(displayController.leaderboard)    },
+    { &gameController.lcd.contrast,   sizeof(gameController.lcd.contrast)   },
+    { &gameController.lcd.brightness, sizeof(gameController.lcd.brightness) },
+    { &gameController.leaderboard,    sizeof(gameController.leaderboard)    },
 };
 static constexpr State DEFAULT_MENU_STATE = {
     &mainMenuUpdate,
@@ -42,8 +42,8 @@ template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&...
 {
     snprintf(&printfBuffer[0], PRINTF_BUFSIZE, fmt, args...);
 
-    displayController.lcd.controller.setCursor(0, row);
-    displayController.lcd.controller.print(&printfBuffer[0]);
+    gameController.lcd.controller.setCursor(0, row);
+    gameController.lcd.controller.print(&printfBuffer[0]);
 }
 
 static void readEEPROM(size_t eepromBaseAddr, void* addr, size_t count)
@@ -66,19 +66,19 @@ static void writeEEPROM(size_t eepromBaseAddr, const void* addr, size_t count)
 
 void refreshContrast(const void* data)
 {
-    analogWrite(DisplayController::CONTRAST_PIN, i16(*(const i32*)(data)));
+    analogWrite(GameController::CONTRAST_PIN, i16(*(const i32*)(data)));
 }
 
 void refreshBrightness(const void* data)
 {
-    analogWrite(DisplayController::BRIGHTNESS_PIN, i16(*(const i32*)(data)));
+    analogWrite(GameController::BRIGHTNESS_PIN, i16(*(const i32*)(data)));
 }
 
 void greetUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 5000;
 
-    auto& state = displayController.state;
+    auto& state = gameController.state;
 
     if (state.entry) {
         state.entry = false;
@@ -94,8 +94,8 @@ void gameOverUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 5000;
 
-    auto& state = displayController.state;
-    auto& params = displayController.state.params.gameOver;
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.gameOver;
 
     if (state.entry) {
         state.entry = false;
@@ -151,8 +151,8 @@ void mainMenuUpdate(const Input& input)
     };
     /* clang-format on */
 
-    auto& state = displayController.state;
-    auto& params = displayController.state.params.mainMenu;
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.mainMenu;
 
     if (state.entry) {
         state.entry = false;
@@ -180,9 +180,9 @@ void mainMenuUpdate(const Input& input)
 
 void startGameUpdate(const Input& input)
 {
-    auto& lc = displayController.lc;
-    auto& state = displayController.state;
-    auto& params = displayController.state.params.game;
+    auto& lc = gameController.lc;
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.game;
 
     if (state.entry) {
         state.entry = false;
@@ -227,14 +227,14 @@ void startGameUpdate(const Input& input)
 
         while (params.food == params.player)
             params.food = {
-                i8(random(DisplayController::MATRIX_SIZE)),
-                i8(random(DisplayController::MATRIX_SIZE)),
+                i8(random(GameController::MATRIX_SIZE)),
+                i8(random(GameController::MATRIX_SIZE)),
             };
 
         lc.setLed(0, params.food.y, params.food.x, true);
     }
 
-    if (params.player != params.player.clamp(0, DisplayController::MATRIX_SIZE - 1)) {
+    if (params.player != params.player.clamp(0, GameController::MATRIX_SIZE - 1)) {
         lc.clearDisplay(0);
 
         const auto score = params.score;
@@ -269,7 +269,7 @@ void settingsUpdate(const Input& input)
             {
                 .slider = {
                     "CONTRAST",
-                    &displayController.lcd.contrast,
+                    &gameController.lcd.contrast,
                     0,
                     255,
                     &refreshContrast
@@ -283,7 +283,7 @@ void settingsUpdate(const Input& input)
             {
                 .slider = {
                     "BRIGHTNESS",
-                    &displayController.lcd.brightness,
+                    &gameController.lcd.brightness,
                     0,
                     255,
                     &refreshBrightness
@@ -293,8 +293,8 @@ void settingsUpdate(const Input& input)
     };
     /* clang-format on */
 
-    auto& state = displayController.state;
-    auto& params = displayController.state.params.settings;
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.settings;
 
     if (state.entry) {
         state.entry = false;
@@ -330,7 +330,7 @@ void aboutUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 3000;
 
-    auto& state = displayController.state;
+    auto& state = gameController.state;
 
     if (state.entry) {
         state.entry = false;
@@ -347,8 +347,8 @@ void sliderUpdate(const Input& input)
 {
     static constexpr i32 STEP = 10;
 
-    auto& state = displayController.state;
-    auto& params = displayController.state.params.slider;
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.slider;
 
     if (state.entry) {
         state.entry = false;
@@ -372,13 +372,13 @@ void sliderUpdate(const Input& input)
         state = { &settingsUpdate, 0, true, {} };
 }
 
-DisplayController::DisplayController()
+GameController::GameController()
     : lcd({ { RS_PIN, ENABLE_PIN, D4, D5, D6, D7 }, {}, {} })
     , lc(DIN_PIN, CLOCK_PIN, LOAD_PIN, 1)
 {
 }
 
-void DisplayController::init()
+void GameController::init()
 {
     size_t eepromAddr = 0;
     for (auto pair : IN_STORAGE) {
@@ -399,4 +399,4 @@ void DisplayController::init()
     state = { &greetUpdate, millis(), true, {} };
 }
 
-void DisplayController::update(const Input& input) { state.updateFunc(input); }
+void GameController::update(const Input& input) { state.updateFunc(input); }

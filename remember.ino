@@ -1,5 +1,5 @@
 #include "Arduino.h"
-#include "DisplayController.hpp"
+#include "GameController.hpp"
 #include "EEPROM.h"
 #include "LedControl.h"
 #include "LiquidCrystal.h"
@@ -9,7 +9,7 @@ static JoystickController joystickController;
 void setup()
 {
     joystickController.init();
-    displayController.init();
+    gameController.init();
 }
 
 void loop()
@@ -18,7 +18,7 @@ void loop()
     const auto joyPress = joystickController.getButtonValue(currentTs);
     const auto joyDir = joystickController.getDirection();
 
-    displayController.update({ currentTs, joyPress, joyDir });
+    gameController.update({ currentTs, joyPress, joyDir });
 }
 
 int main()

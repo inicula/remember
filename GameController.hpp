@@ -15,7 +15,7 @@ using i16 = int16_t;
 using i32 = int32_t;
 using UpdateFunc = void (*)(const Input& input);
 
-class DisplayController {
+class GameController {
 public:
     struct Position {
         bool operator==(const Position& rhs) const { return x == rhs.x && y == rhs.y; }
@@ -68,7 +68,7 @@ public:
         } params;
     };
 
-    DisplayController();
+    GameController();
 
     void init();
     void update(const Input&);
@@ -103,4 +103,4 @@ public:
     LeaderboardEntry leaderboard[LEADERBOARD_SIZE];
 };
 
-extern DisplayController displayController;
+extern GameController gameController;
