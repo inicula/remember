@@ -7,18 +7,19 @@
  */
 
 #pragma once
+#include "Arduino.h"
 
 namespace Tiny {
 /* <array> */
-template <typename T, unsigned N> struct Array {
+template <typename T, size_t N> struct Array {
 public:
     using iterator = T*;
     using const_iterator = const T*;
     using reference = T&;
     using const_reference = const T&;
 
-    const_reference operator[](const unsigned i) const { return data[i]; }
-    reference operator[](const unsigned i) { return data[i]; }
+    const_reference operator[](const size_t i) const { return data[i]; }
+    reference operator[](const size_t i) { return data[i]; }
     const_iterator begin() const { return &data[0]; }
     iterator begin() { return &data[0]; }
     const_iterator end() const { return &data[N]; }
@@ -57,6 +58,26 @@ template <typename T> const T& clamp(const T& x, const Pair<T, T>& range)
     if (x > range.second)
         return range.second;
     return x;
+}
+
+template <typename T> void swap(T& x, T& y)
+{
+    T tmp = x;
+    x = y;
+    y = tmp;
+}
+
+template <typename T, size_t N> void iota(Array<T, N>& array)
+{
+    T i = 0;
+    for (auto& el : array)
+        el = i++;
+}
+
+template <typename T, size_t N> static void shuffle(Array<T, N>& array)
+{
+    for (size_t i = N - 1; i >= 1; --i)
+        Tiny::swap(array[i], array[random(i + 1)]);
 }
 }
 
