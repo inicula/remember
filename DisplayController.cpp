@@ -95,7 +95,7 @@ void gameOverUpdate(u32 currentTs, JoystickController::Press, JoystickController
         state.entry = false;
 
         printfLCD(0, "%-16s", "GAME OVER!");
-        printfLCD(1, "%-10s%-6d", "SCORE:", params.score);
+        printfLCD(1, "%-10s%6d", "Score:", params.score);
     }
 
     if (currentTs - state.timestamp > DURATION)
@@ -157,8 +157,8 @@ void mainMenuUpdate(
     }
 
     const i8 delta = joyDir == JoystickController::Direction::Up
-        ? 1
-        : (joyDir == JoystickController::Direction::Down ? -1 : 0);
+        ? -1
+        : (joyDir == JoystickController::Direction::Down ? 1 : 0);
     const auto newPos = i8(Tiny::clamp(params.pos + delta, 0, NumPositions - 1));
 
     if (newPos != params.pos) {
@@ -260,7 +260,7 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
             true,
             {
                 .slider = {
-                    "Contrast",
+                    "CONTRAST",
                     &displayController.contrast,
                     0,
                     255,
@@ -274,7 +274,7 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
             true,
             {
                 .slider = {
-                    "Brightness",
+                    "BRIGHTNESS",
                     &displayController.brightness,
                     0,
                     255,
@@ -302,8 +302,8 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
     }
 
     const i8 delta = joyDir == JoystickController::Direction::Up
-        ? 1
-        : (joyDir == JoystickController::Direction::Down ? -1 : 0);
+        ? -1
+        : (joyDir == JoystickController::Direction::Down ? 1 : 0);
     const auto newPos = i8(Tiny::clamp(params.pos + delta, 0, NumPositions - 1));
 
     if (newPos != params.pos) {
@@ -327,7 +327,7 @@ void aboutUpdate(u32 currentTs, JoystickController::Press, JoystickController::D
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "QUASI_SNAKE");
+        printfLCD(0, "%-16s", "QUASI-SNAKE");
         printfLCD(1, "%-16s", "Nicula Ionut 334");
     }
 
@@ -346,17 +346,17 @@ void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction 
         state.entry = false;
 
         printfLCD(0, "%-16s", params.description);
-        printfLCD(1, "%-16d", *params.value);
+        printfLCD(1, "%-10s%6d", "Up/Down", *params.value);
     }
 
     const i32 delta = joyDir == JoystickController::Direction::Up
-        ? 1
-        : (joyDir == JoystickController::Direction::Down ? -1 : 0);
+        ? -1
+        : (joyDir == JoystickController::Direction::Down ? 1 : 0);
     const auto newValue = Tiny::clamp(*params.value - STEP * delta, params.min, params.max);
 
     if (*params.value != newValue) {
         *params.value = newValue;
-        printfLCD(1, "%-16d", newValue);
+        printfLCD(1, "%-10s%6d", "Up/Down", *params.value);
         params.callback(&newValue);
     }
 
