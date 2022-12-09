@@ -50,7 +50,7 @@ public:
         const char* description;
         i32* value;
         i32 min, max;
-        void (*callback)(const void*);
+        void (*callback)(i32);
     };
     struct GameOverParams {
         u8 score;

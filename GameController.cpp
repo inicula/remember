@@ -14,8 +14,8 @@ template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
 
 static void readEEPROM(size_t, void*, size_t);
 static void writeEEPROM(size_t, const void*, size_t);
-static void refreshContrast(const void*);
-static void refreshBrightness(const void*);
+static void refreshContrast(i32);
+static void refreshBrightness(i32);
 static void greetUpdate(const Input&);
 static void gameOverUpdate(const Input&);
 static void mainMenuUpdate(const Input&);
@@ -64,15 +64,9 @@ static void writeEEPROM(size_t eepromBaseAddr, const void* addr, size_t count)
         EEPROM.update(i16(eepromBaseAddr + i), buffer[i]);
 }
 
-void refreshContrast(const void* data)
-{
-    analogWrite(GameController::CONTRAST_PIN, i16(*(const i32*)(data)));
-}
+void refreshContrast(i32 value) { analogWrite(GameController::CONTRAST_PIN, i16(value)); }
 
-void refreshBrightness(const void* data)
-{
-    analogWrite(GameController::BRIGHTNESS_PIN, i16(*(const i32*)(data)));
-}
+void refreshBrightness(i32 value) { analogWrite(GameController::BRIGHTNESS_PIN, i16(value)); }
 
 void greetUpdate(const Input& input)
 {
@@ -360,12 +354,12 @@ void sliderUpdate(const Input& input)
     const i32 delta = input.joyDir == JoystickController::Direction::Up
         ? 1
         : (input.joyDir == JoystickController::Direction::Down ? -1 : 0);
-    const auto newValue = Tiny::clamp(*params.value + STEP * delta, params.min, params.max);
+    const i32 newValue = Tiny::clamp(*params.value + STEP * delta, params.min, params.max);
 
     if (*params.value != newValue) {
         *params.value = newValue;
         printfLCD(1, "%-10s%6d", "Up/Down", newValue);
-        params.callback(&newValue);
+        params.callback(newValue);
     }
 
     if (input.joyDir == JoystickController::Direction::Left)
