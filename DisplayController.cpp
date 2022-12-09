@@ -26,9 +26,9 @@ static void sliderUpdate(const Input&);
 
 /* clang-format off */
 static constexpr Tiny::Pair<void*, u16> IN_STORAGE[] = {
-    { &displayController.lcdContrast,   sizeof(displayController.lcdContrast)   },
-    { &displayController.lcdBrightness, sizeof(displayController.lcdBrightness) },
-    { &displayController.leaderboard,   sizeof(displayController.leaderboard)   },
+    { &displayController.lcd.contrast,   sizeof(displayController.lcd.contrast)   },
+    { &displayController.lcd.brightness, sizeof(displayController.lcd.brightness) },
+    { &displayController.leaderboard,    sizeof(displayController.leaderboard)    },
 };
 static constexpr State DEFAULT_MENU_STATE = {
     &mainMenuUpdate,
@@ -42,8 +42,8 @@ template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&...
 {
     snprintf(&printfBuffer[0], PRINTF_BUFSIZE, fmt, args...);
 
-    displayController.lcd.setCursor(0, row);
-    displayController.lcd.print(&printfBuffer[0]);
+    displayController.lcd.controller.setCursor(0, row);
+    displayController.lcd.controller.print(&printfBuffer[0]);
 }
 
 static void readEEPROM(size_t eepromBaseAddr, void* addr, size_t count)
@@ -269,7 +269,7 @@ void settingsUpdate(const Input& input)
             {
                 .slider = {
                     "CONTRAST",
-                    &displayController.lcdContrast,
+                    &displayController.lcd.contrast,
                     0,
                     255,
                     &refreshContrast
@@ -283,7 +283,7 @@ void settingsUpdate(const Input& input)
             {
                 .slider = {
                     "BRIGHTNESS",
-                    &displayController.lcdBrightness,
+                    &displayController.lcd.brightness,
                     0,
                     255,
                     &refreshBrightness
@@ -373,7 +373,7 @@ void sliderUpdate(const Input& input)
 }
 
 DisplayController::DisplayController()
-    : lcd(RS_PIN, ENABLE_PIN, D4, D5, D6, D7)
+    : lcd({ { RS_PIN, ENABLE_PIN, D4, D5, D6, D7 }, {}, {} })
     , lc(DIN_PIN, CLOCK_PIN, LOAD_PIN, 1)
 {
 }
@@ -390,11 +390,11 @@ void DisplayController::init()
     lc.setIntensity(0, DEFAULT_MATRIX_BRIGHTNESS);
     lc.clearDisplay(0);
 
-    lcd.begin(NUM_COLS, NUM_ROWS);
+    lcd.controller.begin(NUM_COLS, NUM_ROWS);
     pinMode(CONTRAST_PIN, OUTPUT);
     pinMode(BRIGHTNESS_PIN, OUTPUT);
-    analogWrite(CONTRAST_PIN, i16(lcdContrast));
-    analogWrite(BRIGHTNESS_PIN, i16(lcdBrightness));
+    analogWrite(CONTRAST_PIN, i16(lcd.contrast));
+    analogWrite(BRIGHTNESS_PIN, i16(lcd.brightness));
 
     state = { &greetUpdate, millis(), true, {} };
 }

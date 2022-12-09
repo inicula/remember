@@ -93,9 +93,11 @@ public:
     static constexpr u8 LEADERBOARD_SIZE = 5;
 
 public:
-    LiquidCrystal lcd;
-    i32 lcdContrast;
-    i32 lcdBrightness;
+    struct {
+        LiquidCrystal controller;
+        i32 contrast;
+        i32 brightness;
+    } lcd;
     LedControl lc;
     State state;
     LeaderboardEntry leaderboard[LEADERBOARD_SIZE];
