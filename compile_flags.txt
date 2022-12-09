@@ -1,0 +1,8 @@
+-x
+c++
+-std=gnu++11
+-Wall
+-Wextra
+-Wconversion
+-Wimplicit-int-conversion
+-Wshorten-64-to-32

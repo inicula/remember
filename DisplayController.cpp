@@ -104,6 +104,7 @@ void mainMenuUpdate(
         NumPositions,
     };
 
+    /* clang-format off */
     static constexpr const char* MENU_DESCRIPTORS[NumPositions] = {
         [StartGame] = ">Start Game     ",
         [Settings]  = ">Settings       ",
@@ -135,6 +136,7 @@ void mainMenuUpdate(
             {}
         },
     };
+    /* clang-format on */
 
     auto& lcd = displayController.lcd;
     auto& state = displayController.state;
@@ -230,7 +232,7 @@ void startGameUpdate(
         lc.setLed(0, params.food.y, params.food.x, true);
     }
 
-    if(params.player != params.player.clamp(0, DisplayController::MATRIX_SIZE - 1)) {
+    if (params.player != params.player.clamp(0, DisplayController::MATRIX_SIZE - 1)) {
         lc.clearDisplay(0);
 
         const auto score = params.score;
@@ -248,6 +250,7 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
         NumPositions,
     };
 
+    /* clang-format off */
     static constexpr const char* SETTINGS_DESCRIPTORS[NumPositions] = {
         [Contrast]   = ">Contrast       ",
         [Brightness] = ">Brightness     ",
@@ -282,6 +285,7 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
             }
         },
     };
+    /* clang-format on */
 
     auto& lcd = displayController.lcd;
     auto& state = displayController.state;
