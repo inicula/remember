@@ -86,7 +86,7 @@ void greetUpdate(const Input& input)
         printfLCD(0, "%-16s", "HAVE FUN!");
     }
 
-    if (input.currentTs - state.timestamp > DURATION)
+    if (input.currentTs - state.beginTs > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
@@ -104,7 +104,7 @@ void gameOverUpdate(const Input& input)
         printfLCD(1, "%-10s%6d", "Score:", params.score);
     }
 
-    if (input.currentTs - state.timestamp > DURATION)
+    if (input.currentTs - state.beginTs > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
@@ -174,7 +174,7 @@ void mainMenuUpdate(const Input& input)
 
     if (input.joyDir == JoystickController::Direction::Right) {
         state = MENU_TRANSITION_STATES[params.pos];
-        state.timestamp = input.currentTs;
+        state.beginTs = input.currentTs;
     }
 }
 

@@ -57,7 +57,7 @@ public:
     };
     struct State {
         UpdateFunc updateFunc;
-        u32 timestamp;
+        u32 beginTs;
         bool entry;
         union {
             MainMenuParams mainMenu;
