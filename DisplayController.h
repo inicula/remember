@@ -4,10 +4,17 @@
 #include "LedControl.h"
 #include "LiquidCrystal.h"
 
+struct Input
+{
+    u32 currentTs;
+    JoystickController::Press joyPress;
+    JoystickController::Direction joyDir;
+};
+
 using i8 = int8_t;
 using i16 = int16_t;
 using i32 = int32_t;
-using UpdateFunc = void (*)(u32, JoystickController::Press, JoystickController::Direction);
+using UpdateFunc = void (*)(const Input& input);
 
 class DisplayController {
 public:
@@ -58,8 +65,7 @@ public:
     DisplayController();
 
     void init();
-    void update(u32 currentTs, JoystickController::Press joyPress,
-        JoystickController::Direction joyDir);
+    void update(const Input& input);
 
     static constexpr u8 DIN_PIN = 12;
     static constexpr u8 CLOCK_PIN = 11;

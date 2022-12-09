@@ -16,13 +16,13 @@ static void readEEPROM(void*, size_t, size_t);
 static void writeEEPROM(const void*, size_t, size_t);
 static void refreshContrast(const void*);
 static void refreshBrightness(const void*);
-static void greetUpdate(u32, JoystickController::Press, JoystickController::Direction);
-static void gameOverUpdate(u32, JoystickController::Press, JoystickController::Direction);
-static void mainMenuUpdate(u32, JoystickController::Press, JoystickController::Direction);
-static void startGameUpdate(u32, JoystickController::Press, JoystickController::Direction);
-static void settingsUpdate(u32, JoystickController::Press, JoystickController::Direction);
-static void aboutUpdate(u32, JoystickController::Press, JoystickController::Direction);
-static void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction);
+static void greetUpdate(const Input& input);
+static void gameOverUpdate(const Input& input);
+static void mainMenuUpdate(const Input& input);
+static void startGameUpdate(const Input& input);
+static void settingsUpdate(const Input& input);
+static void aboutUpdate(const Input& input);
+static void sliderUpdate(const Input& input);
 
 static constexpr Tiny::Pair<void*, u16> SETTINGS_FROM_STORAGE[] = {
     { &displayController.contrast, sizeof(displayController.contrast) },
@@ -68,7 +68,7 @@ void refreshBrightness(const void* data)
     analogWrite(DisplayController::BRIGHTNESS_PIN, int(*(const i32*)(data)));
 }
 
-void greetUpdate(u32 currentTs, JoystickController::Press, JoystickController::Direction)
+void greetUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 5000;
 
@@ -80,11 +80,11 @@ void greetUpdate(u32 currentTs, JoystickController::Press, JoystickController::D
         printfLCD(0, "%-16s", "HAVE FUN!");
     }
 
-    if (currentTs - state.timestamp > DURATION)
+    if (input.currentTs - state.timestamp > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
-void gameOverUpdate(u32 currentTs, JoystickController::Press, JoystickController::Direction)
+void gameOverUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 5000;
 
@@ -98,12 +98,11 @@ void gameOverUpdate(u32 currentTs, JoystickController::Press, JoystickController
         printfLCD(1, "%-10s%6d", "Score:", params.score);
     }
 
-    if (currentTs - state.timestamp > DURATION)
+    if (input.currentTs - state.timestamp > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
-void mainMenuUpdate(
-    u32 currentTs, JoystickController::Press, JoystickController::Direction joyDir)
+void mainMenuUpdate(const Input& input)
 {
     enum MenuPosition : u8 {
         StartGame = 0,
@@ -156,9 +155,9 @@ void mainMenuUpdate(
         printfLCD(1, "%-16s", MENU_DESCRIPTORS[params.pos]);
     }
 
-    const i8 delta = joyDir == JoystickController::Direction::Up
+    const i8 delta = input.joyDir == JoystickController::Direction::Up
         ? -1
-        : (joyDir == JoystickController::Direction::Down ? 1 : 0);
+        : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
     const auto newPos = i8(Tiny::clamp(params.pos + delta, 0, NumPositions - 1));
 
     if (newPos != params.pos) {
@@ -167,14 +166,13 @@ void mainMenuUpdate(
         printfLCD(1, "%-16s", MENU_DESCRIPTORS[params.pos]);
     }
 
-    if (joyDir == JoystickController::Direction::Right) {
+    if (input.joyDir == JoystickController::Direction::Right) {
         state = MENU_TRANSITION_STATES[params.pos];
-        state.timestamp = currentTs;
+        state.timestamp = input.currentTs;
     }
 }
 
-void startGameUpdate(
-    u32 currentTs, JoystickController::Press, JoystickController::Direction joyDir)
+void startGameUpdate(const Input& input)
 {
     auto& lc = displayController.lc;
     auto& state = displayController.state;
@@ -192,7 +190,7 @@ void startGameUpdate(
     }
 
     const auto oldPos = params.player;
-    switch (joyDir) {
+    switch (input.joyDir) {
     case JoystickController::Direction::None:
         break;
     case JoystickController::Direction::Up:
@@ -234,13 +232,13 @@ void startGameUpdate(
         lc.clearDisplay(0);
 
         const auto score = params.score;
-        state = { gameOverUpdate, currentTs, true, {} };
+        state = { gameOverUpdate, input.currentTs, true, {} };
         state.params.gameOver.score
             = score; /* Separately, otherwise internal compiler error */
     }
 }
 
-void settingsUpdate(u32, JoystickController::Press, JoystickController::Direction joyDir)
+void settingsUpdate(const Input& input)
 {
     enum SettingsPosition : u8 {
         Contrast = 0,
@@ -301,9 +299,9 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
         }
     }
 
-    const i8 delta = joyDir == JoystickController::Direction::Up
+    const i8 delta = input.joyDir == JoystickController::Direction::Up
         ? -1
-        : (joyDir == JoystickController::Direction::Down ? 1 : 0);
+        : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
     const auto newPos = i8(Tiny::clamp(params.pos + delta, 0, NumPositions - 1));
 
     if (newPos != params.pos) {
@@ -312,13 +310,13 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
         printfLCD(1, "%-16s", SETTINGS_DESCRIPTORS[params.pos]);
     }
 
-    if (joyDir == JoystickController::Direction::Right)
+    if (input.joyDir == JoystickController::Direction::Right)
         state = SETTING_TRANSITION_STATES[params.pos];
-    if (joyDir == JoystickController::Direction::Left)
+    if (input.joyDir == JoystickController::Direction::Left)
         state = DEFAULT_MENU_STATE;
 }
 
-void aboutUpdate(u32 currentTs, JoystickController::Press, JoystickController::Direction)
+void aboutUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 3000;
 
@@ -331,11 +329,11 @@ void aboutUpdate(u32 currentTs, JoystickController::Press, JoystickController::D
         printfLCD(1, "%-16s", "Nicula Ionut 334");
     }
 
-    if (currentTs - state.timestamp > DURATION)
+    if (input.currentTs - state.timestamp > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
-void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction joyDir)
+void sliderUpdate(const Input& input)
 {
     static constexpr i32 STEP = 10;
 
@@ -349,9 +347,9 @@ void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction 
         printfLCD(1, "%-10s%6d", "Up/Down", *params.value);
     }
 
-    const i32 delta = joyDir == JoystickController::Direction::Up
+    const i32 delta = input.joyDir == JoystickController::Direction::Up
         ? -1
-        : (joyDir == JoystickController::Direction::Down ? 1 : 0);
+        : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
     const auto newValue = Tiny::clamp(*params.value - STEP * delta, params.min, params.max);
 
     if (*params.value != newValue) {
@@ -360,7 +358,7 @@ void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction 
         params.callback(&newValue);
     }
 
-    if (joyDir == JoystickController::Direction::Left)
+    if (input.joyDir == JoystickController::Direction::Left)
         state = { &settingsUpdate, 0, true, {} };
 }
 
@@ -391,8 +389,4 @@ void DisplayController::init()
     state = { greetUpdate, millis(), true, {} };
 }
 
-void DisplayController::update(
-    u32 currentTs, JoystickController::Press joyPress, JoystickController::Direction joyDir)
-{
-    state.updateFunc(currentTs, joyPress, joyDir);
-}
+void DisplayController::update(const Input& input) { state.updateFunc(input); }

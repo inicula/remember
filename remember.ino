@@ -18,7 +18,7 @@ void loop()
     const auto joyPress = joystickController.getButtonValue(currentTs);
     const auto joyDir = joystickController.getDirection();
 
-    displayController.update(currentTs, joyPress, joyDir);
+    displayController.update({ currentTs, joyPress, joyDir });
 }
 
 int main()
