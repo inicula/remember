@@ -23,7 +23,7 @@ public:
     };
 
     void init();
-    Press getButtonValue(u32 currentTs);
+    Press getButtonValue(u32);
     Direction getDirection();
 
     static constexpr u8 BUTTON_PIN = 2;
@@ -34,7 +34,7 @@ public:
     static constexpr auto NUM_DIRECTIONS = u8(Direction::NumDirections);
 
 private:
-    bool updateButton(u32 currentTs);
+    bool updateButton(u32);
 
 private:
     struct {

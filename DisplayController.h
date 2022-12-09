@@ -65,7 +65,7 @@ public:
     DisplayController();
 
     void init();
-    void update(const Input& input);
+    void update(const Input&);
 
     static constexpr u8 DIN_PIN = 12;
     static constexpr u8 CLOCK_PIN = 11;

@@ -16,13 +16,13 @@ static void readEEPROM(void*, size_t, size_t);
 static void writeEEPROM(const void*, size_t, size_t);
 static void refreshContrast(const void*);
 static void refreshBrightness(const void*);
-static void greetUpdate(const Input& input);
-static void gameOverUpdate(const Input& input);
-static void mainMenuUpdate(const Input& input);
-static void startGameUpdate(const Input& input);
-static void settingsUpdate(const Input& input);
-static void aboutUpdate(const Input& input);
-static void sliderUpdate(const Input& input);
+static void greetUpdate(const Input&);
+static void gameOverUpdate(const Input&);
+static void mainMenuUpdate(const Input&);
+static void startGameUpdate(const Input&);
+static void settingsUpdate(const Input&);
+static void aboutUpdate(const Input&);
+static void sliderUpdate(const Input&);
 
 static constexpr Tiny::Pair<void*, u16> SETTINGS_FROM_STORAGE[] = {
     { &displayController.contrast, sizeof(displayController.contrast) },
