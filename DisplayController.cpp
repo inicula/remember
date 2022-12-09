@@ -7,6 +7,13 @@ constexpr u8 DisplayController::DEFAULT_BRIGHTNESS;
 
 DisplayController displayController;
 
+static constexpr u8 PRINTF_BUFSIZE = 17;
+static char printfBuffer[PRINTF_BUFSIZE] = {};
+
+template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
+
+static void readEEPROM(void*, size_t, size_t);
+static void writeEEPROM(const void*, size_t, size_t);
 static void refreshContrast(const void*);
 static void refreshBrightness(const void*);
 static void greetUpdate(u32, JoystickController::Press, JoystickController::Direction);
@@ -15,7 +22,6 @@ static void mainMenuUpdate(u32, JoystickController::Press, JoystickController::D
 static void startGameUpdate(u32, JoystickController::Press, JoystickController::Direction);
 static void settingsUpdate(u32, JoystickController::Press, JoystickController::Direction);
 static void aboutUpdate(u32, JoystickController::Press, JoystickController::Direction);
-template <i32 DIFF = 10>
 static void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction);
 
 static constexpr Tiny::Pair<void*, u16> SETTINGS_FROM_STORAGE[] = {
@@ -25,7 +31,15 @@ static constexpr Tiny::Pair<void*, u16> SETTINGS_FROM_STORAGE[] = {
 static constexpr State DEFAULT_MENU_STATE
     = { &mainMenuUpdate, 0, true, { .mainMenu = { 0 } } };
 
-static void eepromRead(void* addr, size_t eepromBaseAddr, size_t count)
+template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&... args)
+{
+    snprintf(&printfBuffer[0], PRINTF_BUFSIZE, fmt, args...);
+
+    displayController.lcd.setCursor(0, row);
+    displayController.lcd.print(&printfBuffer[0]);
+}
+
+static void readEEPROM(void* addr, size_t eepromBaseAddr, size_t count)
 {
     u8 buffer[count];
 
@@ -35,7 +49,7 @@ static void eepromRead(void* addr, size_t eepromBaseAddr, size_t count)
     memcpy(addr, &buffer[0], count);
 }
 
-static void eepromWrite(const void* addr, size_t eepromBaseAddr, size_t count)
+static void writeEEPROM(const void* addr, size_t eepromBaseAddr, size_t count)
 {
     u8 buffer[count];
     memcpy(&buffer[0], addr, count);
@@ -58,14 +72,12 @@ void greetUpdate(u32 currentTs, JoystickController::Press, JoystickController::D
 {
     static constexpr u32 DURATION = 5000;
 
-    auto& lcd = displayController.lcd;
     auto& state = displayController.state;
 
     if (state.entry) {
         state.entry = false;
 
-        lcd.clear();
-        lcd.print("HAVE FUN!");
+        printfLCD(0, "%-16s", "HAVE FUN!");
     }
 
     if (currentTs - state.timestamp > DURATION)
@@ -76,18 +88,14 @@ void gameOverUpdate(u32 currentTs, JoystickController::Press, JoystickController
 {
     static constexpr u32 DURATION = 5000;
 
-    auto& lcd = displayController.lcd;
     auto& state = displayController.state;
     auto& params = displayController.state.params.gameOver;
 
     if (state.entry) {
         state.entry = false;
 
-        lcd.clear();
-        lcd.print("GAME OVER");
-        lcd.setCursor(0, 1);
-        lcd.print("SCORE: ");
-        lcd.print(params.score);
+        printfLCD(0, "%-16s", "GAME OVER!");
+        printfLCD(1, "%-10s%-6d", "SCORE:", params.score);
     }
 
     if (currentTs - state.timestamp > DURATION)
@@ -106,9 +114,9 @@ void mainMenuUpdate(
 
     /* clang-format off */
     static constexpr const char* MENU_DESCRIPTORS[NumPositions] = {
-        [StartGame] = ">Start Game     ",
-        [Settings]  = ">Settings       ",
-        [About]     = ">About          ",
+        [StartGame] = ">Start Game",
+        [Settings]  = ">Settings",
+        [About]     = ">About",
     };
     static constexpr State MENU_TRANSITION_STATES[NumPositions] = {
         [StartGame] = {
@@ -138,17 +146,14 @@ void mainMenuUpdate(
     };
     /* clang-format on */
 
-    auto& lcd = displayController.lcd;
     auto& state = displayController.state;
     auto& params = displayController.state.params.mainMenu;
 
     if (state.entry) {
         state.entry = false;
 
-        lcd.clear();
-        lcd.print("MAIN MENU");
-        lcd.setCursor(0, 1);
-        lcd.print(MENU_DESCRIPTORS[params.pos]);
+        printfLCD(0, "%-16s", "MAIN MENU");
+        printfLCD(1, "%-16s", MENU_DESCRIPTORS[params.pos]);
     }
 
     const i8 delta = joyDir == JoystickController::Direction::Up
@@ -159,8 +164,7 @@ void mainMenuUpdate(
     if (newPos != params.pos) {
         params.pos = newPos;
 
-        lcd.setCursor(0, 1);
-        lcd.print(MENU_DESCRIPTORS[params.pos]);
+        printfLCD(1, "%-16s", MENU_DESCRIPTORS[params.pos]);
     }
 
     if (joyDir == JoystickController::Direction::Right) {
@@ -172,7 +176,6 @@ void mainMenuUpdate(
 void startGameUpdate(
     u32 currentTs, JoystickController::Press, JoystickController::Direction joyDir)
 {
-    auto& lcd = displayController.lcd;
     auto& lc = displayController.lc;
     auto& state = displayController.state;
     auto& params = displayController.state.params.game;
@@ -182,11 +185,8 @@ void startGameUpdate(
 
         randomSeed(micros());
 
-        lcd.clear();
-        lcd.print("PLAYING");
-        lcd.setCursor(0, 1);
-        lcd.print(params.score);
-        lcd.print("  ");
+        printfLCD(0, "%-16s", "PLAYING");
+        printfLCD(1, "%-16d", params.score);
 
         lc.setLed(0, params.player.y, params.player.x, true);
     }
@@ -219,9 +219,7 @@ void startGameUpdate(
     if (params.player == params.food) {
         ++params.score;
 
-        lcd.setCursor(0, 1);
-        lcd.print(params.score);
-        lcd.print("  ");
+        printfLCD(1, "%-16d", params.score);
 
         while (params.food == params.player)
             params.food = {
@@ -252,8 +250,8 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
 
     /* clang-format off */
     static constexpr const char* SETTINGS_DESCRIPTORS[NumPositions] = {
-        [Contrast]   = ">Contrast       ",
-        [Brightness] = ">Brightness     ",
+        [Contrast]   = ">Contrast",
+        [Brightness] = ">Brightness",
     };
     static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
         [Contrast] = {
@@ -287,21 +285,18 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
     };
     /* clang-format on */
 
-    auto& lcd = displayController.lcd;
     auto& state = displayController.state;
     auto& params = displayController.state.params.settings;
 
     if (state.entry) {
         state.entry = false;
 
-        lcd.clear();
-        lcd.print("Settings");
-        lcd.setCursor(0, 1);
-        lcd.print(SETTINGS_DESCRIPTORS[params.pos]);
+        printfLCD(0, "%-16s", "SETTINGS");
+        printfLCD(1, "%-16s", SETTINGS_DESCRIPTORS[params.pos]);
 
         size_t eepromAddr = 0;
         for (auto pair : SETTINGS_FROM_STORAGE) {
-            eepromWrite(pair.first, eepromAddr, pair.second);
+            writeEEPROM(pair.first, eepromAddr, pair.second);
             eepromAddr += pair.second;
         }
     }
@@ -314,8 +309,7 @@ void settingsUpdate(u32, JoystickController::Press, JoystickController::Directio
     if (newPos != params.pos) {
         params.pos = newPos;
 
-        lcd.setCursor(0, 1);
-        lcd.print(SETTINGS_DESCRIPTORS[params.pos]);
+        printfLCD(1, "%-16s", SETTINGS_DESCRIPTORS[params.pos]);
     }
 
     if (joyDir == JoystickController::Direction::Right)
@@ -328,52 +322,42 @@ void aboutUpdate(u32 currentTs, JoystickController::Press, JoystickController::D
 {
     static constexpr u32 DURATION = 3000;
 
-    auto& lcd = displayController.lcd;
     auto& state = displayController.state;
 
     if (state.entry) {
         state.entry = false;
 
-        lcd.clear();
-        lcd.print("QUASI-SNAKE");
-        lcd.setCursor(0, 1);
-        lcd.print("Nicula Ionut 334");
+        printfLCD(0, "%-16s", "QUASI_SNAKE");
+        printfLCD(1, "%-16s", "Nicula Ionut 334");
     }
 
     if (currentTs - state.timestamp > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
-template <i32 DIFF>
 void sliderUpdate(u32, JoystickController::Press, JoystickController::Direction joyDir)
 {
-    auto& lcd = displayController.lcd;
+    static constexpr i32 STEP = 10;
+
     auto& state = displayController.state;
     auto& params = displayController.state.params.slider;
 
     if (state.entry) {
         state.entry = false;
 
-        lcd.clear();
-        lcd.print(params.description);
-        lcd.setCursor(0, 1);
-        lcd.print(*params.value);
-        lcd.print("   ");
+        printfLCD(0, "%-16s", params.description);
+        printfLCD(1, "%-16d", *params.value);
     }
 
     const i32 delta = joyDir == JoystickController::Direction::Up
         ? 1
         : (joyDir == JoystickController::Direction::Down ? -1 : 0);
-    const auto newValue = Tiny::clamp(*params.value - DIFF * delta, params.min, params.max);
+    const auto newValue = Tiny::clamp(*params.value - STEP * delta, params.min, params.max);
 
     if (*params.value != newValue) {
         *params.value = newValue;
-
-        lcd.setCursor(0, 1);
-        lcd.print(*params.value);
-        lcd.print("   ");
-
-        params.callback(params.value);
+        printfLCD(1, "%-16d", newValue);
+        params.callback(&newValue);
     }
 
     if (joyDir == JoystickController::Direction::Left)
@@ -390,7 +374,7 @@ void DisplayController::init()
 {
     size_t eepromAddr = 0;
     for (auto pair : SETTINGS_FROM_STORAGE) {
-        eepromRead(pair.first, eepromAddr, pair.second);
+        readEEPROM(pair.first, eepromAddr, pair.second);
         eepromAddr += pair.second;
     }
 

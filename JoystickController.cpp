@@ -54,13 +54,25 @@ JoystickController::Direction JoystickController::getDirection()
      */
     switch (moveState) {
     case MoveState::Ok: {
-        const auto xDir = xVal < AXIS_MIN_THRESHOLD
-            ? Direction::Left
-            : (xVal > AXIS_MAX_THRESHOLD ? Direction::Right : Direction::None);
+        Direction xDir;
+        if constexpr (INVERTED_X)
+            xDir = xVal < AXIS_MIN_THRESHOLD
+                ? Direction::Right
+                : (xVal > AXIS_MAX_THRESHOLD ? Direction::Left : Direction::None);
+        else
+            xDir = xVal < AXIS_MIN_THRESHOLD
+                ? Direction::Left
+                : (xVal > AXIS_MAX_THRESHOLD ? Direction::Right : Direction::None);
 
-        const auto yDir = yVal < AXIS_MIN_THRESHOLD
-            ? Direction::Down
-            : (yVal > AXIS_MAX_THRESHOLD ? Direction::Up : Direction::None);
+        Direction yDir;
+        if constexpr (INVERTED_Y)
+            yDir = yVal < AXIS_MIN_THRESHOLD
+                ? Direction::Up
+                : (yVal > AXIS_MAX_THRESHOLD ? Direction::Down : Direction::None);
+        else
+            yDir = yVal < AXIS_MIN_THRESHOLD
+                ? Direction::Down
+                : (yVal > AXIS_MAX_THRESHOLD ? Direction::Up : Direction::None);
 
         moveState = MoveState::NeedsReset;
         if (u8(xDir) && yVal == Tiny::clamp(yVal, NON_CONFLICT_RANGE))

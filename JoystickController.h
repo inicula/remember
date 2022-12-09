@@ -29,6 +29,8 @@ public:
     static constexpr u8 BUTTON_PIN = 2;
     static constexpr u8 X_AXIS_PIN = A0;
     static constexpr u8 Y_AXIS_PIN = A1;
+    static constexpr bool INVERTED_X = false;
+    static constexpr bool INVERTED_Y = true;
     static constexpr auto NUM_DIRECTIONS = u8(Direction::NumDirections);
 
 private:
