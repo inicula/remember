@@ -1,5 +1,5 @@
 #include "Arduino.h"
-#include "DisplayController.h"
+#include "DisplayController.hpp"
 #include "EEPROM.h"
 #include "LedControl.h"
 #include "LiquidCrystal.h"

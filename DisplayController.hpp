@@ -1,6 +1,6 @@
 #pragma once
 #include "EEPROM.h"
-#include "JoystickController.h"
+#include "JoystickController.hpp"
 #include "LedControl.h"
 #include "LiquidCrystal.h"
 

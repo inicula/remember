@@ -1,4 +1,4 @@
-#include "DisplayController.h"
+#include "DisplayController.hpp"
 
 using State = DisplayController::State;
 

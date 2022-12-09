@@ -1,4 +1,4 @@
-#include "JoystickController.h"
+#include "JoystickController.hpp"
 
 void JoystickController::init()
 {
