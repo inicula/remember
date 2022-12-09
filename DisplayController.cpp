@@ -354,7 +354,7 @@ void sliderUpdate(const Input& input)
 
     if (*params.value != newValue) {
         *params.value = newValue;
-        printfLCD(1, "%-10s%6d", "Up/Down", *params.value);
+        printfLCD(1, "%-10s%6d", "Up/Down", newValue);
         params.callback(&newValue);
     }
 
