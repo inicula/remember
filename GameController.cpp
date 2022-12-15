@@ -322,18 +322,25 @@ void settingsUpdate(const Input& input)
 
 void aboutUpdate(const Input& input)
 {
-    static constexpr u32 DURATION = 3000;
+    static constexpr u32 SCROLL_STEP = 250;
+    static constexpr const char* gitLink = "github.com/niculaionut/remember";
+    static constexpr u32 gitLinkLen = strlen(gitLink);
 
     auto& state = gameController.state;
 
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "QUASI-SNAKE");
-        printfLCD(1, "%-16s", "Nicula Ionut 334");
+        printfLCD(0, "%-16s", "REMEMBER");
+        printfLCD(1, "%-16s", "github.com/niculaionut/remember");
     }
 
-    if (input.currentTs - state.beginTs > DURATION)
+    const u32 intervalNum = (input.currentTs - state.beginTs) / SCROLL_STEP;
+    const auto oddInterval = intervalNum % 2;
+    if (oddInterval)
+        printfLCD(1, "%-16s", gitLink + Tiny::clamp((intervalNum + 1) / 2, 0ul, gitLinkLen));
+
+    if (intervalNum / 2 > gitLinkLen)
         state = DEFAULT_MENU_STATE;
 }
 
