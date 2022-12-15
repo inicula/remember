@@ -7,6 +7,8 @@ constexpr u8 GameController::DEFAULT_BRIGHTNESS;
 
 GameController gameController;
 
+static constexpr const char* STR_FMT = "%-16s";
+static constexpr const char* INT_FMT = "%-16d";
 static constexpr u8 PRINTF_BUFSIZE = 17;
 static char printfBuffer[PRINTF_BUFSIZE] = {};
 
@@ -77,7 +79,7 @@ void greetUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "HAVE FUN!");
+        printfLCD(0, STR_FMT, "HAVE FUN!");
     }
 
     if (input.currentTs - state.beginTs > DURATION)
@@ -94,7 +96,7 @@ void gameOverUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "GAME OVER!");
+        printfLCD(0, STR_FMT, "GAME OVER!");
         printfLCD(1, "%-10s%6d", "Score:", params.score);
     }
 
@@ -151,8 +153,8 @@ void mainMenuUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "MAIN MENU");
-        printfLCD(1, "%-16s", MENU_DESCRIPTORS[params.pos]);
+        printfLCD(0, STR_FMT, "MAIN MENU");
+        printfLCD(1, STR_FMT, MENU_DESCRIPTORS[params.pos]);
     }
 
     const i8 delta = input.joyDir == JoystickController::Direction::Up
@@ -163,7 +165,7 @@ void mainMenuUpdate(const Input& input)
     if (newPos != params.pos) {
         params.pos = newPos;
 
-        printfLCD(1, "%-16s", MENU_DESCRIPTORS[params.pos]);
+        printfLCD(1, STR_FMT, MENU_DESCRIPTORS[params.pos]);
     }
 
     if (input.joyDir == JoystickController::Direction::Right) {
@@ -183,8 +185,8 @@ void startGameUpdate(const Input& input)
 
         randomSeed(micros());
 
-        printfLCD(0, "%-16s", "PLAYING");
-        printfLCD(1, "%-16d", params.score);
+        printfLCD(0, STR_FMT, "PLAYING");
+        printfLCD(1, INT_FMT, params.score);
 
         lc.setLed(0, params.player.y, params.player.x, true);
     }
@@ -217,7 +219,7 @@ void startGameUpdate(const Input& input)
     if (params.player == params.food) {
         ++params.score;
 
-        printfLCD(1, "%-16d", params.score);
+        printfLCD(1, INT_FMT, params.score);
 
         while (params.food == params.player)
             params.food = {
@@ -293,8 +295,8 @@ void settingsUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "SETTINGS");
-        printfLCD(1, "%-16s", SETTINGS_DESCRIPTORS[params.pos]);
+        printfLCD(0, STR_FMT, "SETTINGS");
+        printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
 
         size_t eepromAddr = 0;
         for (auto pair : IN_STORAGE) {
@@ -311,7 +313,7 @@ void settingsUpdate(const Input& input)
     if (newPos != params.pos) {
         params.pos = newPos;
 
-        printfLCD(1, "%-16s", SETTINGS_DESCRIPTORS[params.pos]);
+        printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
     }
 
     if (input.joyDir == JoystickController::Direction::Right)
@@ -331,14 +333,14 @@ void aboutUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", "REMEMBER");
-        printfLCD(1, "%-16s", "github.com/niculaionut/remember");
+        printfLCD(0, STR_FMT, "REMEMBER");
+        printfLCD(1, STR_FMT, "github.com/niculaionut/remember");
     }
 
     const u32 intervalNum = (input.currentTs - state.beginTs) / SCROLL_STEP;
     const auto oddInterval = intervalNum % 2;
     if (oddInterval)
-        printfLCD(1, "%-16s", gitLink + Tiny::clamp((intervalNum + 1) / 2, 0ul, gitLinkLen));
+        printfLCD(1, STR_FMT, gitLink + Tiny::clamp((intervalNum + 1) / 2, 0ul, gitLinkLen));
 
     if (intervalNum / 2 > gitLinkLen)
         state = DEFAULT_MENU_STATE;
@@ -354,7 +356,7 @@ void sliderUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, "%-16s", params.description);
+        printfLCD(0, STR_FMT, params.description);
         printfLCD(1, "%-10s%6d", "Up/Down", *params.value);
     }
 
