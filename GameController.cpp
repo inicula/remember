@@ -229,7 +229,7 @@ void startGameUpdate(const Input& input)
         randomSeed(micros());
 
         printfLCD(0, STR_FMT, "Score/Remaining");
-        printfLCD(1, "%-7d/%7d", params.score, params.remaining);
+        printfLCD(1, "%-8d/%7d", params.score, params.remaining);
 
         Tiny::shuffle(matrixRowIndices);
         Tiny::shuffle(matrixColIndices);
