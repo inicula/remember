@@ -458,14 +458,17 @@ void nameSelectionUpdate(const Input& input)
         ? -1
         : (input.joyDir == JoystickController::Direction::Up ? 1 : 0);
     if (delta) {
-        i16 currentCharPos = 0;
+        i16 currentCharIdx = 0;
         for (i8 i = 0; i < i8(NAME_ALPHABET.len); ++i) {
-            if (currentPlayer.name[i] == NAME_ALPHABET.ptr[i])
-                currentCharPos = i;
+            if (currentPlayer.name[params.pos] == NAME_ALPHABET.ptr[i])
+                currentCharIdx = i;
         }
 
-        currentCharPos = Tiny::clamp(currentCharPos + delta, 0, i16(NAME_ALPHABET.len - 1));
-        gameController.lcd.controller.print(NAME_ALPHABET.ptr[currentCharPos]);
+        currentCharIdx = Tiny::clamp(currentCharIdx + delta, 0, i16(NAME_ALPHABET.len - 1));
+        const char letter = NAME_ALPHABET.ptr[currentCharIdx];
+
+        currentPlayer.name[params.pos] = letter;
+        gameController.lcd.controller.print(letter);
         gameController.lcd.controller.setCursor(u8(params.pos), 1);
     }
 }
