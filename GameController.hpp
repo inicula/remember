@@ -55,6 +55,9 @@ public:
     struct GameOverParams {
         u8 score;
     };
+    struct NameSelectionParams {
+        i8 pos;
+    };
     struct State {
         UpdateFunc updateFunc;
         u32 beginTs;
@@ -65,6 +68,7 @@ public:
             SettingsParams settings;
             SettingSliderParams slider;
             GameOverParams gameOver;
+            NameSelectionParams nameSelection;
         } params;
     };
 

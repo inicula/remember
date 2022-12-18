@@ -12,6 +12,7 @@ static constexpr const char* STR_FMT = "%-16s";
 static constexpr const char* INT_FMT = "%-16d";
 static constexpr u8 PRINTF_BUFSIZE = 17;
 static char printfBuffer[PRINTF_BUFSIZE] = {};
+static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
 
 template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
 
@@ -28,6 +29,7 @@ static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
 static void highScoreUpdate(const Input&);
 static void setDefaultState(const Input&);
+static void nameSelectionUpdate(const Input&);
 
 /* clang-format off */
 static constexpr struct{
@@ -424,6 +426,48 @@ void setDefaultState(const Input&)
     refreshBrightness(gameController.lcd.brightness);
 
     gameController.state = { &settingsUpdate, 0, true, {} };
+}
+
+void nameSelectionUpdate(const Input& input)
+{
+    static constexpr Tiny::String NAME_ALPHABET = " ABCDEFGHIJKLMNOPRSTUVWXYZ";
+
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.nameSelection;
+
+    if (state.entry) {
+        state.entry = false;
+
+        printfLCD(0, STR_FMT, "Your name:");
+        gameController.lcd.controller.setCursor(0, 1);
+        gameController.lcd.controller.noAutoscroll();
+        gameController.lcd.controller.blink();
+    }
+
+    i8 delta = input.joyDir == JoystickController::Direction::Left
+        ? -1
+        : (input.joyDir == JoystickController::Direction::Right ? 1 : 0);
+    const auto oldPos = params.pos;
+
+    params.pos = i8(params.pos + delta);
+    params.pos = Tiny::clamp(params.pos, 0, GameController::LeaderboardEntry::NAME_SIZE - 1);
+    if (params.pos != oldPos)
+        gameController.lcd.controller.setCursor(u8(params.pos), 1);
+
+    delta = input.joyDir == JoystickController::Direction::Down
+        ? -1
+        : (input.joyDir == JoystickController::Direction::Up ? 1 : 0);
+    if (delta) {
+        i16 currentCharPos = 0;
+        for (i8 i = 0; i < i8(NAME_ALPHABET.len); ++i) {
+            if (currentPlayer.name[i] == NAME_ALPHABET.ptr[i])
+                currentCharPos = i;
+        }
+
+        currentCharPos = Tiny::clamp(currentCharPos + delta, 0, i16(NAME_ALPHABET.len - 1));
+        gameController.lcd.controller.print(NAME_ALPHABET.ptr[currentCharPos]);
+        gameController.lcd.controller.setCursor(u8(params.pos), 1);
+    }
 }
 
 GameController::GameController()
