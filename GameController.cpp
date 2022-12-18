@@ -41,7 +41,7 @@ GameController gameController;
 static constexpr const char* STR_FMT = "%-16s";
 static constexpr const char* INT_FMT = "%-16d";
 static constexpr u8 PRINTF_BUFSIZE = 17;
-static constexpr StorageEntry IN_STORAGE[] = {
+static constexpr StorageEntry STORAGE_DATA[] = {
     {
         &gameController.lcd.contrast,
         &GameController::DEFAULT_CONTRAST,
@@ -314,9 +314,9 @@ void settingsUpdate(const Input& input)
         printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
 
         size_t eepromAddr = 0;
-        for (auto opt : IN_STORAGE) {
-            writeEEPROM(eepromAddr, opt.addr, opt.size);
-            eepromAddr += opt.size;
+        for (const auto& data : STORAGE_DATA) {
+            writeEEPROM(eepromAddr, data.addr, data.size);
+            eepromAddr += data.size;
         }
     }
 
@@ -417,10 +417,10 @@ void highScoreUpdate(const Input& input)
 void setDefaultState(const Input&)
 {
     size_t eepromAddr = 0;
-    for (auto opt : IN_STORAGE) {
-        writeEEPROM(eepromAddr, opt.defaultAddr, opt.size);
-        memcpy(opt.addr, opt.defaultAddr, opt.size);
-        eepromAddr += opt.size;
+    for (const auto& data : STORAGE_DATA) {
+        writeEEPROM(eepromAddr, data.defaultAddr, data.size);
+        memcpy(data.addr, data.defaultAddr, data.size);
+        eepromAddr += data.size;
     }
 
     refreshBrightness(gameController.lcd.contrast);
@@ -488,9 +488,9 @@ void GameController::init()
 
     /* Read game info/settings from storage */
     size_t eepromAddr = 0;
-    for (auto opt : IN_STORAGE) {
-        readEEPROM(eepromAddr, opt.addr, opt.size);
-        eepromAddr += opt.size;
+    for (const auto& data : STORAGE_DATA) {
+        readEEPROM(eepromAddr, data.addr, data.size);
+        eepromAddr += data.size;
     }
 
     /* Initialize the matrix display */
