@@ -1,23 +1,17 @@
 #include "GameController.hpp"
 
+/* Typedefs */
 using State = GameController::State;
 
+/* Static constexpr class variables */
 constexpr u8 GameController::DEFAULT_CONTRAST;
 constexpr u8 GameController::DEFAULT_BRIGHTNESS;
 constexpr GameController::LeaderboardEntry GameController::DEFAULT_LEADERBOARD[];
 
-GameController gameController;
-
-static constexpr const char* STR_FMT = "%-16s";
-static constexpr const char* INT_FMT = "%-16d";
-static constexpr u8 PRINTF_BUFSIZE = 17;
-static char printfBuffer[PRINTF_BUFSIZE] = {};
-static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
-static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixRowIndices = {};
-static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixColIndices = {};
-
+/* Template function declarations */
 template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
 
+/* Function declarations */
 static void readEEPROM(size_t, void*, size_t);
 static void writeEEPROM(size_t, const void*, size_t);
 static void refreshContrast(i32);
@@ -33,6 +27,13 @@ static void highScoreUpdate(const Input&);
 static void setDefaultState(const Input&);
 static void nameSelectionUpdate(const Input&);
 
+/* Extern variables */
+GameController gameController;
+
+/* Constexpr variables */
+static constexpr const char* STR_FMT = "%-16s";
+static constexpr const char* INT_FMT = "%-16d";
+static constexpr u8 PRINTF_BUFSIZE = 17;
 /* clang-format off */
 static constexpr struct{
     void* addr;
@@ -50,6 +51,12 @@ static constexpr State DEFAULT_MENU_STATE = {
     { .mainMenu = { 0 } },
 };
 /* clang-format on */
+
+/* Static variables */
+static char printfBuffer[PRINTF_BUFSIZE] = {};
+static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
+static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixRowIndices = {};
+static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixColIndices = {};
 
 template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&... args)
 {
