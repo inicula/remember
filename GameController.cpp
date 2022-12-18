@@ -3,6 +3,13 @@
 /* Typedefs */
 using State = GameController::State;
 
+/* Structs */
+struct StorageEntry {
+    void* addr;
+    u16 size;
+    const void* defaultAddr;
+};
+
 /* Static constexpr class variables */
 constexpr u8 GameController::DEFAULT_CONTRAST;
 constexpr u8 GameController::DEFAULT_BRIGHTNESS;
@@ -34,15 +41,22 @@ GameController gameController;
 static constexpr const char* STR_FMT = "%-16s";
 static constexpr const char* INT_FMT = "%-16d";
 static constexpr u8 PRINTF_BUFSIZE = 17;
-/* clang-format off */
-static constexpr struct{
-    void* addr;
-    u16 size;
-    const void* defaultAddr;
-} IN_STORAGE[] = {
-    { &gameController.lcd.contrast,   sizeof(gameController.lcd.contrast),   &GameController::DEFAULT_CONTRAST    },
-    { &gameController.lcd.brightness, sizeof(gameController.lcd.brightness), &GameController::DEFAULT_BRIGHTNESS  },
-    { &gameController.leaderboard,    sizeof(gameController.leaderboard),    &GameController::DEFAULT_LEADERBOARD },
+static constexpr StorageEntry IN_STORAGE[] = {
+    {
+        &gameController.lcd.contrast,
+        sizeof(gameController.lcd.contrast),
+        &GameController::DEFAULT_CONTRAST,
+    },
+    {
+        &gameController.lcd.brightness,
+        sizeof(gameController.lcd.brightness),
+        &GameController::DEFAULT_BRIGHTNESS,
+    },
+    {
+        &gameController.leaderboard,
+        sizeof(gameController.leaderboard),
+        &GameController::DEFAULT_LEADERBOARD,
+    },
 };
 static constexpr State DEFAULT_MENU_STATE = {
     &mainMenuUpdate,
@@ -50,7 +64,6 @@ static constexpr State DEFAULT_MENU_STATE = {
     true,
     { .mainMenu = { 0 } },
 };
-/* clang-format on */
 
 /* Static variables */
 static char printfBuffer[PRINTF_BUFSIZE] = {};
