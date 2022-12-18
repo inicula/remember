@@ -462,25 +462,30 @@ GameController::GameController()
 
 void GameController::init()
 {
+    /* Fill index lists */
     Tiny::iota(matrixRowIndices);
     Tiny::iota(matrixColIndices);
 
+    /* Read game info/settings from storage */
     size_t eepromAddr = 0;
     for (auto opt : IN_STORAGE) {
         readEEPROM(eepromAddr, opt.addr, opt.size);
         eepromAddr += opt.size;
     }
 
+    /* Initialize the matrix display */
     lc.shutdown(0, false);
     lc.setIntensity(0, DEFAULT_MATRIX_BRIGHTNESS);
     lc.clearDisplay(0);
 
+    /* Initialize the LCD */
     lcd.controller.begin(NUM_COLS, NUM_ROWS);
     pinMode(CONTRAST_PIN, OUTPUT);
     pinMode(BRIGHTNESS_PIN, OUTPUT);
     analogWrite(CONTRAST_PIN, i16(lcd.contrast));
     analogWrite(BRIGHTNESS_PIN, i16(lcd.brightness));
 
+    /* Initialize the default state */
     state = { &greetUpdate, millis(), true, {} };
 }
 
