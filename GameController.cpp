@@ -6,8 +6,8 @@ using State = GameController::State;
 /* Structs */
 struct StorageEntry {
     void* addr;
-    u16 size;
     const void* defaultAddr;
+    u16 size;
 };
 
 /* Static constexpr class variables */
@@ -44,18 +44,18 @@ static constexpr u8 PRINTF_BUFSIZE = 17;
 static constexpr StorageEntry IN_STORAGE[] = {
     {
         &gameController.lcd.contrast,
-        sizeof(gameController.lcd.contrast),
         &GameController::DEFAULT_CONTRAST,
+        sizeof(gameController.lcd.contrast),
     },
     {
         &gameController.lcd.brightness,
-        sizeof(gameController.lcd.brightness),
         &GameController::DEFAULT_BRIGHTNESS,
+        sizeof(gameController.lcd.brightness),
     },
     {
         &gameController.leaderboard,
-        sizeof(gameController.leaderboard),
         &GameController::DEFAULT_LEADERBOARD,
+        sizeof(gameController.leaderboard),
     },
 };
 static constexpr State DEFAULT_MENU_STATE = {
