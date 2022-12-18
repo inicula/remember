@@ -1,5 +1,5 @@
 /*
- *  Minimal implementations of some STL components:
+ *  Minimal implementations of some STL components and some other utils:
  *      std::array,
  *      std::pair,
  *      std::for_each,
@@ -42,7 +42,7 @@ template <typename Container, typename Callable> void forEach(Container& cont, C
         call(el);
 }
 
-template <typename T> const T& clamp(const T& x, const T& low, const T& high)
+template <typename T, typename U> T clamp(const T& x, const U& low, const U& high)
 {
     if (x < low)
         return low;
@@ -51,7 +51,7 @@ template <typename T> const T& clamp(const T& x, const T& low, const T& high)
     return x;
 }
 
-template <typename T> const T& clamp(const T& x, const Pair<T, T>& range)
+template <typename T> T clamp(const T& x, const Pair<T, T>& range)
 {
     if (x < range.first)
         return range.first;
@@ -79,6 +79,17 @@ template <typename T, size_t N> static void shuffle(Array<T, N>& array)
     for (size_t i = N - 1; i >= 1; --i)
         Tiny::swap(array[i], array[random(i + 1)]);
 }
+
+struct String {
+    constexpr String(const char* ptr)
+        : ptr(ptr)
+        , len(strlen(ptr))
+    {
+    }
+
+    const char* ptr;
+    size_t len;
+};
 }
 
 #define UNREACHABLE __builtin_unreachable()

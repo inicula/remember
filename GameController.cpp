@@ -25,6 +25,7 @@ static void startGameUpdate(const Input&);
 static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
+static void highScoreUpdate(const Input&);
 
 /* clang-format off */
 static constexpr Tiny::Pair<void*, u16> IN_STORAGE[] = {
@@ -325,8 +326,7 @@ void settingsUpdate(const Input& input)
 void aboutUpdate(const Input& input)
 {
     static constexpr u32 SCROLL_STEP = 250;
-    static constexpr const char* gitLink = "github.com/niculaionut/remember";
-    static constexpr u32 gitLinkLen = strlen(gitLink);
+    static constexpr Tiny::String GIT_LINK = "github.com/niculaionut/remember";
 
     auto& state = gameController.state;
 
@@ -340,9 +340,10 @@ void aboutUpdate(const Input& input)
     const u32 intervalNum = (input.currentTs - state.beginTs) / SCROLL_STEP;
     const auto oddInterval = intervalNum % 2;
     if (oddInterval)
-        printfLCD(1, STR_FMT, gitLink + Tiny::clamp((intervalNum + 1) / 2, 0ul, gitLinkLen));
+        printfLCD(
+            1, STR_FMT, GIT_LINK.ptr + Tiny::clamp((intervalNum + 1) / 2, 0u, GIT_LINK.len));
 
-    if (intervalNum / 2 > gitLinkLen)
+    if (intervalNum / 2 > GIT_LINK.len)
         state = DEFAULT_MENU_STATE;
 }
 
@@ -373,6 +374,30 @@ void sliderUpdate(const Input& input)
 
     if (input.joyDir == JoystickController::Direction::Left)
         state = { &settingsUpdate, 0, true, {} };
+}
+
+void highScoreUpdate(const Input& input)
+{
+    static constexpr u32 SCROLL_STEP = 250;
+    static constexpr Tiny::String CONGRATS_MSG = "CONGRATS! YOUR LEADERBOARD POSITION:";
+
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.slider;
+
+    if (state.entry) {
+        state.entry = false;
+
+        printfLCD(0, STR_FMT, CONGRATS_MSG.ptr);
+    }
+
+    const u32 intervalNum = (input.currentTs - state.beginTs) / SCROLL_STEP;
+    const auto oddInterval = intervalNum % 2;
+    if (oddInterval)
+        printfLCD(0, STR_FMT,
+            CONGRATS_MSG.ptr + Tiny::clamp((intervalNum + 1) / 2, 0u, CONGRATS_MSG.len));
+
+    if (intervalNum / 2 > CONGRATS_MSG.len)
+        state = DEFAULT_MENU_STATE;
 }
 
 GameController::GameController()
