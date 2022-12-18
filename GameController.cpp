@@ -13,6 +13,8 @@ static constexpr const char* INT_FMT = "%-16d";
 static constexpr u8 PRINTF_BUFSIZE = 17;
 static char printfBuffer[PRINTF_BUFSIZE] = {};
 static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
+static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixRowIndices = {};
+static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixColIndices = {};
 
 template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
 
@@ -88,7 +90,8 @@ void greetUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, STR_FMT, "HAVE FUN!");
+        printfLCD(0, STR_FMT, "REMEMBER");
+        printfLCD(1, STR_FMT, "A Memory Game");
     }
 
     if (input.currentTs - state.beginTs > DURATION)
@@ -135,9 +138,12 @@ void mainMenuUpdate(const Input& input)
             true,
             {
                 .game = {
-                    { 0, 0 },
-                    { 0, 0 },
-                    255
+                    {0, 0},
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
                 }
             }
         },
@@ -185,6 +191,14 @@ void mainMenuUpdate(const Input& input)
 
 void startGameUpdate(const Input& input)
 {
+    static constexpr u32 DEFAULT_TIME = 5000;
+    static constexpr u32 LEVEL_TIME_DELTA = 100;
+
+    enum class State : u8 {
+        PreGame = 0,
+        Game,
+    };
+
     auto& lc = gameController.lc;
     auto& state = gameController.state;
     auto& params = gameController.state.params.game;
@@ -194,62 +208,29 @@ void startGameUpdate(const Input& input)
 
         randomSeed(micros());
 
-        printfLCD(0, STR_FMT, "PLAYING");
-        printfLCD(1, INT_FMT, params.score);
+        printfLCD(0, STR_FMT, "Score/Remaining");
+        printfLCD(1, "%-7d/%7d", params.score, params.remaining);
 
-        lc.setLed(0, params.player.y, params.player.x, true);
+        Tiny::shuffle(matrixRowIndices);
+        Tiny::shuffle(matrixColIndices);
     }
 
-    const auto oldPos = params.player;
-    switch (input.joyDir) {
-    case JoystickController::Direction::None:
-        break;
-    case JoystickController::Direction::Up:
-        ++params.player.y;
-        break;
-    case JoystickController::Direction::Down:
-        --params.player.y;
-        break;
-    case JoystickController::Direction::Left:
-        ++params.player.x;
-        break;
-    case JoystickController::Direction::Right:
-        --params.player.x;
-        break;
-    default:
-        UNREACHABLE;
-    }
+    if (params.subState == u8(State::PreGame)) {
+        const auto onTime = (DEFAULT_TIME - params.level * LEVEL_TIME_DELTA) / 2;
+        const u32 intervalNum = (input.currentTs - state.beginTs) / onTime;
+        const auto oddInterval = intervalNum % 2;
+        if (oddInterval && ((intervalNum + 1) / 2) == (params.tileIdx + 1)) {
+            if (params.tileIdx < params.level)
+                lc.setLed(0, matrixRowIndices[params.tileIdx],
+                    matrixColIndices[params.tileIdx], true);
 
-    if (params.player != oldPos) {
-        lc.setLed(0, oldPos.y, oldPos.x, false);
-        lc.setLed(0, params.player.y, params.player.x, true);
-    }
+            ++params.tileIdx;
+        }
 
-    if (params.player == params.food) {
-        ++params.score;
-
-        printfLCD(1, INT_FMT, params.score);
-
-        while (params.food == params.player)
-            params.food = {
-                i8(random(GameController::MATRIX_SIZE)),
-                i8(random(GameController::MATRIX_SIZE)),
-            };
-
-        lc.setLed(0, params.food.y, params.food.x, true);
-    }
-
-    if (params.player != params.player.clamp(0, GameController::MATRIX_SIZE - 1)) {
-        lc.clearDisplay(0);
-
-        const auto score = params.score;
-        state = { &gameOverUpdate, input.currentTs, true, {} };
-
-        /*
-         *  This union member needs to be assigned separately because of an internal compiler
-         *  error. See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59832
-         */
-        state.params.gameOver.score = score;
+        if (params.tileIdx == params.level + 1) {
+            params.subState = u8(State::Game);
+            lc.clearDisplay(0);
+        }
     }
 }
 
@@ -430,7 +411,7 @@ void setDefaultState(const Input&)
 
 void nameSelectionUpdate(const Input& input)
 {
-    static constexpr Tiny::String NAME_ALPHABET = " ABCDEFGHIJKLMNOPRSTUVWXYZ";
+    static constexpr Tiny::String NAME_ALPHABET = " ABCDEFGHIJKLMNOPRSTUVWXYZ0123456789";
 
     auto& state = gameController.state;
     auto& params = gameController.state.params.nameSelection;
@@ -481,6 +462,9 @@ GameController::GameController()
 
 void GameController::init()
 {
+    Tiny::iota(matrixRowIndices);
+    Tiny::iota(matrixColIndices);
+
     size_t eepromAddr = 0;
     for (auto opt : IN_STORAGE) {
         readEEPROM(eepromAddr, opt.addr, opt.size);
