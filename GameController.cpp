@@ -4,6 +4,7 @@ using State = GameController::State;
 
 constexpr u8 GameController::DEFAULT_CONTRAST;
 constexpr u8 GameController::DEFAULT_BRIGHTNESS;
+constexpr GameController::LeaderboardEntry GameController::DEFAULT_LEADERBOARD[];
 
 GameController gameController;
 
@@ -26,12 +27,17 @@ static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
 static void highScoreUpdate(const Input&);
+static void setDefaultState(const Input&);
 
 /* clang-format off */
-static constexpr Tiny::Pair<void*, u16> IN_STORAGE[] = {
-    { &gameController.lcd.contrast,   sizeof(gameController.lcd.contrast)   },
-    { &gameController.lcd.brightness, sizeof(gameController.lcd.brightness) },
-    { &gameController.leaderboard,    sizeof(gameController.leaderboard)    },
+static constexpr struct{
+    void* addr;
+    u16 size;
+    const void* defaultAddr;
+} IN_STORAGE[] = {
+    { &gameController.lcd.contrast,   sizeof(gameController.lcd.contrast),   &GameController::DEFAULT_CONTRAST    },
+    { &gameController.lcd.brightness, sizeof(gameController.lcd.brightness), &GameController::DEFAULT_BRIGHTNESS  },
+    { &gameController.leaderboard,    sizeof(gameController.leaderboard),    &GameController::DEFAULT_LEADERBOARD },
 };
 static constexpr State DEFAULT_MENU_STATE = {
     &mainMenuUpdate,
@@ -250,6 +256,7 @@ void settingsUpdate(const Input& input)
     enum SettingsPosition : u8 {
         Contrast = 0,
         Brightness,
+        DefaultState,
         NumPositions,
     };
 
@@ -257,6 +264,7 @@ void settingsUpdate(const Input& input)
     static constexpr const char* SETTINGS_DESCRIPTORS[NumPositions] = {
         [Contrast]   = ">Contrast",
         [Brightness] = ">Brightness",
+        [DefaultState] = ">Default state",
     };
     static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
         [Contrast] = {
@@ -287,6 +295,9 @@ void settingsUpdate(const Input& input)
                 }
             }
         },
+        [DefaultState] = {
+            &setDefaultState,
+        }
     };
     /* clang-format on */
 
@@ -300,9 +311,9 @@ void settingsUpdate(const Input& input)
         printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
 
         size_t eepromAddr = 0;
-        for (auto pair : IN_STORAGE) {
-            writeEEPROM(eepromAddr, pair.first, pair.second);
-            eepromAddr += pair.second;
+        for (auto opt : IN_STORAGE) {
+            writeEEPROM(eepromAddr, opt.addr, opt.size);
+            eepromAddr += opt.size;
         }
     }
 
@@ -400,6 +411,21 @@ void highScoreUpdate(const Input& input)
         state = DEFAULT_MENU_STATE;
 }
 
+void setDefaultState(const Input&)
+{
+    size_t eepromAddr = 0;
+    for (auto opt : IN_STORAGE) {
+        writeEEPROM(eepromAddr, opt.defaultAddr, opt.size);
+        memcpy(opt.addr, opt.defaultAddr, opt.size);
+        eepromAddr += opt.size;
+    }
+
+    refreshBrightness(gameController.lcd.contrast);
+    refreshBrightness(gameController.lcd.brightness);
+
+    gameController.state = { &settingsUpdate, 0, true, {} };
+}
+
 GameController::GameController()
     : lcd({ { RS_PIN, ENABLE_PIN, D4, D5, D6, D7 }, {}, {} })
     , lc(DIN_PIN, CLOCK_PIN, LOAD_PIN, 1)
@@ -409,9 +435,9 @@ GameController::GameController()
 void GameController::init()
 {
     size_t eepromAddr = 0;
-    for (auto pair : IN_STORAGE) {
-        readEEPROM(eepromAddr, pair.first, pair.second);
-        eepromAddr += pair.second;
+    for (auto opt : IN_STORAGE) {
+        readEEPROM(eepromAddr, opt.addr, opt.size);
+        eepromAddr += opt.size;
     }
 
     lc.shutdown(0, false);

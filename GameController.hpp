@@ -91,6 +91,14 @@ public:
     static constexpr u8 DEFAULT_BRIGHTNESS = 255;
     static constexpr u8 DEFAULT_MATRIX_BRIGHTNESS = 255;
     static constexpr u8 LEADERBOARD_SIZE = 5;
+    static constexpr LeaderboardEntry LEADERBOARD_ENTRY_NONE = { "", 0 };
+    static constexpr LeaderboardEntry DEFAULT_LEADERBOARD[] = {
+        LEADERBOARD_ENTRY_NONE,
+        LEADERBOARD_ENTRY_NONE,
+        LEADERBOARD_ENTRY_NONE,
+        LEADERBOARD_ENTRY_NONE,
+        LEADERBOARD_ENTRY_NONE,
+    };
 
 public:
     struct {
