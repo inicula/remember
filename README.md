@@ -1,6 +1,6 @@
 ## Remember - A Memory Game
 
-This game was inspired by by a series of videos
+This game was inspired by a series of videos
 ([example](https://youtu.be/zsXP8qeFF6A)) examining chimpanzees' ability to
 beat humans in simple memory games.
 
