@@ -33,7 +33,7 @@ static void refreshIntensity(i32 value);
 static void greetUpdate(const Input&);
 static void gameOverUpdate(const Input&);
 static void mainMenuUpdate(const Input&);
-static void startGameUpdate(const Input&);
+static void gameUpdate(const Input&);
 static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
@@ -222,7 +222,7 @@ void mainMenuUpdate(const Input& input)
     };
     static constexpr State MENU_TRANSITION_STATES[NumPositions] = {
         [StartGame] = {
-            &startGameUpdate,
+            &gameUpdate,
             0,
             true,
             {
@@ -230,9 +230,9 @@ void mainMenuUpdate(const Input& input)
                     {0, 0},
                     0,
                     0,
-                    1,
+                    5,
                     0,
-                    1,
+                    0,
                 }
             }
         },
@@ -278,14 +278,14 @@ void mainMenuUpdate(const Input& input)
     }
 }
 
-void startGameUpdate(const Input& input)
+void gameUpdate(const Input& input)
 {
-    static constexpr u32 DEFAULT_TIME = 5000;
-    static constexpr u32 LEVEL_TIME_DELTA = 100;
+    static constexpr u32 DEFAULT_TIME = 500;
 
     enum class State : u8 {
-        PreGame = 0,
-        Game,
+        GenerateLevel = 0,
+        ShowLevel,
+        Playing,
     };
 
     auto& lc = gameController.matrix.controller;
@@ -295,17 +295,30 @@ void startGameUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        randomSeed(micros());
+        switch (params.subState) {
+        case u8(State::GenerateLevel):
+            printfLCD(0, STR_FMT, "Score:");
+            printfLCD(1, INT_FMT, params.score);
 
-        printfLCD(0, STR_FMT, "Score/Remaining");
-        printfLCD(1, "%-8d/%7d", params.score, params.remaining);
+            randomSeed(micros());
+            Tiny::shuffle(matrixRowIndices);
+            Tiny::shuffle(matrixColIndices);
 
-        Tiny::shuffle(matrixRowIndices);
-        Tiny::shuffle(matrixColIndices);
+            lc.clearDisplay(0);
+            params.subState = u8(State::ShowLevel);
+
+            break;
+        case u8(State::ShowLevel):
+            lc.clearDisplay(0);
+            break;
+        default:
+            break;
+        }
     }
 
-    if (params.subState == u8(State::PreGame)) {
-        const auto onTime = (DEFAULT_TIME - params.level * LEVEL_TIME_DELTA) / 2;
+    switch (params.subState) {
+    case u8(State::ShowLevel): {
+        const auto onTime = DEFAULT_TIME / 2;
         const u32 intervalNum = (input.currentTs - state.beginTs) / onTime;
         const auto oddInterval = intervalNum % 2;
         if (oddInterval && ((intervalNum + 1) / 2) == (params.tileIdx + 1)) {
@@ -316,10 +329,21 @@ void startGameUpdate(const Input& input)
             ++params.tileIdx;
         }
 
-        if (params.tileIdx == params.level + 1) {
-            params.subState = u8(State::Game);
-            lc.clearDisplay(0);
+        if (params.tileIdx == params.level + 1)
+            params.subState = u8(State::Playing);
+
+        break;
+    }
+    case u8(State::Playing):
+        if (!params.captured && input.joyPress == JoystickController::Press::Long) {
+            state.entry = true;
+            state.beginTs = input.currentTs;
+            params.tileIdx = 0;
+            params.subState = u8(State::ShowLevel);
         }
+        break;
+    default:
+        break;
     }
 }
 

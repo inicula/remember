@@ -43,8 +43,8 @@ public:
         u8 tileIdx;
         u8 subState;
         u8 level;
+        u8 captured;
         u8 score;
-        u8 remaining;
     };
     struct SettingsParams {
         i8 pos;
