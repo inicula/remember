@@ -41,11 +41,14 @@ static void sliderUpdate(const Input&);
 static void nameSelectionUpdate(const Input&);
 static void leaderboardUpdate(const Input&);
 static void saveToStorage();
+static void highlightMovement(JoystickController::Direction);
+static void highlightPress(JoystickController::Press);
 
 /* Extern variables */
 GameController gameController;
 
 /* Constexpr variables */
+static constexpr u8 INPUT_SOUND_DUR = 50;
 static constexpr const char* STR_FMT = "%-16s";
 static constexpr const char* INT_FMT = "%-16d";
 static constexpr u8 PRINTF_BUFSIZE = 17;
@@ -188,6 +191,7 @@ void greetUpdate(const Input& input)
 
     if (u8(input.joyPress)) {
         mp.stop();
+        highlightPress(input.joyPress);
         state = DEFAULT_MENU_STATE;
     }
 }
@@ -216,6 +220,8 @@ void gameOverUpdate(const Input& input)
     }
 
     if (u8(input.joyPress) || input.currentTs - state.beginTs > DURATION) {
+        highlightPress(input.joyPress);
+
         if (params.highScore) {
             const auto score = params.score;
             const auto rank = params.rank;
@@ -309,6 +315,8 @@ void mainMenuUpdate(const Input& input)
         printfLCD(1, STR_FMT, MENU_DESCRIPTORS[params.pos]);
     }
 
+    highlightMovement(input.joyDir);
+
     const i8 delta = input.joyDir == JoystickController::Direction::Up
         ? -1
         : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
@@ -391,12 +399,16 @@ void gameUpdate(const Input& input)
     }
     case u8(State::Playing): {
         if (!params.captured && input.joyPress == JoystickController::Press::Long) {
+            highlightPress(input.joyPress);
+
             state.entry = true;
             state.beginTs = input.currentTs;
             params.player = { i8(matrixColIndices[0]), i8(matrixRowIndices[0]) };
             params.tileIdx = 0;
             params.subState = u8(State::ShowLevel);
         }
+
+        highlightMovement(input.joyDir);
 
         const auto oldPos = params.player;
         switch (input.joyDir) {
@@ -429,6 +441,8 @@ void gameUpdate(const Input& input)
         }
 
         if (input.joyPress == JoystickController::Press::Short) {
+            highlightPress(input.joyPress);
+
             if (params.player
                 == Position {
                     i8(matrixColIndices[params.captured]),
@@ -548,6 +562,8 @@ void settingsUpdate(const Input& input)
         saveToStorage();
     }
 
+    highlightMovement(input.joyDir);
+
     const i8 delta = input.joyDir == JoystickController::Direction::Up
         ? -1
         : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
@@ -608,6 +624,8 @@ void aboutUpdate(const Input& input)
         }
     }
 
+    highlightMovement(input.joyDir);
+
     switch (params.subState) {
     case Disengaged: {
         const auto oldPos = params.pos;
@@ -663,6 +681,8 @@ void sliderUpdate(const Input& input)
         printfLCD(1, "%-10c%6d", UP_DOWN_ARROW, *params.value);
     }
 
+    highlightMovement(input.joyDir);
+
     const i32 delta = input.joyDir == JoystickController::Direction::Up
         ? 1
         : (input.joyDir == JoystickController::Direction::Down ? -1 : 0);
@@ -696,6 +716,8 @@ void nameSelectionUpdate(const Input& input)
         gameController.lcd.controller.noAutoscroll();
         gameController.lcd.controller.blink();
     }
+
+    highlightMovement(input.joyDir);
 
     i8 delta = input.joyDir == JoystickController::Direction::Left
         ? -1
@@ -731,6 +753,7 @@ void nameSelectionUpdate(const Input& input)
             gameController.leaderboard[i] = gameController.leaderboard[i - 1];
         gameController.leaderboard[params.rank] = currentPlayer;
 
+        highlightPress(input.joyPress);
         saveToStorage();
 
         state = DEFAULT_MENU_STATE;
@@ -750,6 +773,8 @@ void leaderboardUpdate(const Input& input)
         printfLCD(
             1, "%1d. %-10s %2d", state.params.leaderboard.pos + 1, entry.name, entry.score);
     }
+
+    highlightMovement(input.joyDir);
 
     const i8 delta = input.joyDir == JoystickController::Direction::Up
         ? -1
@@ -776,6 +801,18 @@ void saveToStorage()
         writeEEPROM(eepromAddr, data.addr, data.size);
         eepromAddr += data.size;
     }
+}
+
+void highlightMovement(const JoystickController::Direction joyDir)
+{
+    if (u8(joyDir))
+        tone(MelodyPlayer::BUZZER_PIN, NOTE_FS3, INPUT_SOUND_DUR);
+}
+
+void highlightPress(const JoystickController::Press joyPress)
+{
+    if (u8(joyPress))
+        tone(MelodyPlayer::BUZZER_PIN, NOTE_FS7, INPUT_SOUND_DUR);
 }
 
 GameController::GameController()
