@@ -1,4 +1,5 @@
 #include "GameController.hpp"
+#include "music.h"
 
 /* Typedefs */
 using State = GameController::State;
@@ -116,6 +117,7 @@ static char printfBuffer[PRINTF_BUFSIZE] = {};
 static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
 static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixRowIndices = {};
 static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixColIndices = {};
+static MelodyPlayer mp(CONTRAPUNCTUS_1, 10000);
 
 template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&... args)
 {
@@ -173,8 +175,6 @@ void refreshIntensity(i32 value)
 
 void greetUpdate(const Input& input)
 {
-    static constexpr u32 DURATION = 5000;
-
     auto& state = gameController.state;
 
     if (state.entry) {
@@ -184,8 +184,12 @@ void greetUpdate(const Input& input)
         printfLCD(1, STR_FMT, "A Memory Game");
     }
 
-    if (u8(input.joyPress) || input.currentTs - state.beginTs > DURATION)
+    mp.play();
+
+    if (u8(input.joyPress)) {
+        mp.stop();
         state = DEFAULT_MENU_STATE;
+    }
 }
 
 void gameOverUpdate(const Input& input)
@@ -572,7 +576,6 @@ void aboutUpdate(const Input& input)
         GameName,
         Author,
         GitLink,
-        HowToPlay,
         NumPositions,
     };
 
@@ -580,19 +583,11 @@ void aboutUpdate(const Input& input)
         [GameName] = DOWN_ARROW_STR " Game Name",
         [Author] = UP_DOWN_ARROW_STR " Author",
         [GitLink] = UP_DOWN_ARROW_STR "Github Link",
-        [HowToPlay] = "^ How To Play",
     };
     static constexpr Tiny::Pair<Tiny::String, Tiny::String> CONTENT[NumPositions] = {
         [GameName] = { "Game Name", "Remember" },
         [Author] = { "Author", "Nicula Ionut 334" },
         [GitLink] = { "Git Link", "github.com/niculaionut/remember" },
-        [HowToPlay] = { "How To Play",
-            "At the start of each level, pay attention to the order in which the "
-            "circles light up. Then, recreate the order by moving your joystick "
-            "and pressing it. Keep in mind that at the start of every level, your "
-            "initial position is the same as the first circle's position. You can view the "
-            "order in which the circles appear once again by pressing the joystick for 1 "
-            "second, but only if you haven't yet started reconstructing the order." },
     };
 
     auto& state = gameController.state;

@@ -98,7 +98,7 @@ public:
     void update(const Input&);
 
     static constexpr u8 DIN_PIN = 12;
-    static constexpr u8 CLOCK_PIN = 11;
+    static constexpr u8 CLOCK_PIN = 4;
     static constexpr u8 LOAD_PIN = 10;
     static constexpr u8 MATRIX_SIZE = 8;
     static constexpr u8 RS_PIN = 9;
