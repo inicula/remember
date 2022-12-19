@@ -4,7 +4,7 @@ This game was inspired by by a series of videos ([example](https://youtu.be/zsXP
 
 ## Description
 
-This game uses an 8x8 matrix display on which circles appear in a certain order. As the difficulty increases, you will have to remember the order of more of these circles.
+This game uses an 8x8 matrix display on which circles appear in a certain order, which you will have to recreate. As the difficulty increases, you will have to remember the order of more of these circles.
 
 ## How To Play
 
