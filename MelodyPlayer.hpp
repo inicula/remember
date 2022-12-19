@@ -4,7 +4,7 @@
 
 struct Note {
     u16 freq;
-    u32 slice;
+    u8 slice;
 };
 
 using Melody = const Note*;
