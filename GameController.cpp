@@ -38,6 +38,8 @@ static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
 static void nameSelectionUpdate(const Input&);
+static void leaderboardUpdate(const Input&);
+static void saveToStorage();
 
 /* Extern variables */
 GameController gameController;
@@ -182,7 +184,7 @@ void greetUpdate(const Input& input)
         printfLCD(1, STR_FMT, "A Memory Game");
     }
 
-    if (u8(input.joyDir) || u8(input.joyPress) || input.currentTs - state.beginTs > DURATION)
+    if (u8(input.joyPress) || input.currentTs - state.beginTs > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
@@ -196,23 +198,23 @@ void gameOverUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        size_t rank = 0;
-        while (rank < GameController::LEADERBOARD_SIZE
-            && params.score <= gameController.leaderboard[rank].score)
-            ++rank;
+        currentPlayer.score = i8(params.score);
+        params.rank = 0;
+        while (params.rank < GameController::LEADERBOARD_SIZE
+            && params.score <= gameController.leaderboard[params.rank].score)
+            ++params.rank;
 
-        if (rank < GameController::LEADERBOARD_SIZE) {
-            gameController.leaderboard[rank].score = i8(params.score);
+        if (params.rank < GameController::LEADERBOARD_SIZE)
             params.highScore = true;
-        }
 
         printfLCD(0, STR_FMT, "GAME OVER!");
-        printfLCD(1, "%s %-2d %s %2d", "Score", params.score, "Rank", rank + 1);
+        printfLCD(1, "%s %-2d %s %2d", "Score", params.score, "Rank", params.rank + 1);
     }
 
-    if (input.currentTs - state.beginTs > DURATION) {
+    if (u8(input.joyPress) || input.currentTs - state.beginTs > DURATION) {
         if (params.highScore) {
             const auto score = params.score;
+            const auto rank = params.rank;
             state = {
                 &nameSelectionUpdate,
                 input.currentTs,
@@ -220,6 +222,7 @@ void gameOverUpdate(const Input& input)
                 {},
             };
             state.params.nameSelection.score = score;
+            state.params.nameSelection.rank = rank;
         } else {
             state = DEFAULT_MENU_STATE;
         }
@@ -230,6 +233,7 @@ void mainMenuUpdate(const Input& input)
 {
     enum MenuPosition : u8 {
         StartGame = 0,
+        Leaderboard,
         Settings,
         About,
         NumPositions,
@@ -238,6 +242,7 @@ void mainMenuUpdate(const Input& input)
     /* clang-format off */
     static constexpr const char* MENU_DESCRIPTORS[NumPositions] = {
         [StartGame] = DOWN_ARROW_STR " Start Game",
+        [Leaderboard]  = UP_DOWN_ARROW_STR " Leaderboard",
         [Settings]  = UP_DOWN_ARROW_STR " Settings",
         [About]     = "^ About",
     };
@@ -253,6 +258,16 @@ void mainMenuUpdate(const Input& input)
                     0,
                     1,
                     0,
+                    0,
+                }
+            }
+        },
+        [Leaderboard] = {
+            &leaderboardUpdate,
+            0,
+            true,
+            {
+                .leaderboard = {
                     0,
                 }
             }
@@ -410,6 +425,7 @@ void gameUpdate(const Input& input)
                 ++params.captured;
             } else {
                 const auto score = params.score;
+                lc.clearDisplay(0);
                 state = { &gameOverUpdate, input.currentTs, true, {} };
                 state.params.gameOver.score = score;
                 break;
@@ -517,11 +533,7 @@ void settingsUpdate(const Input& input)
         printfLCD(0, STR_FMT, "<> SETTINGS");
         printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
 
-        size_t eepromAddr = 0;
-        for (const auto& data : STORAGE_DATA) {
-            writeEEPROM(eepromAddr, data.addr, data.size);
-            eepromAddr += data.size;
-        }
+        saveToStorage();
     }
 
     const i8 delta = input.joyDir == JoystickController::Direction::Up
@@ -603,12 +615,9 @@ void nameSelectionUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        i8 pos = GameController::LEADERBOARD_SIZE - 1;
-        while (gameController.leaderboard[pos].score != params.score)
-            --pos;
-        params.pos = pos;
-
         printfLCD(0, STR_FMT, "Your name:");
+        printfLCD(1, STR_FMT, currentPlayer.name);
+
         gameController.lcd.controller.setCursor(0, 1);
         gameController.lcd.controller.noAutoscroll();
         gameController.lcd.controller.blink();
@@ -620,7 +629,8 @@ void nameSelectionUpdate(const Input& input)
     const auto oldPos = params.pos;
 
     params.pos = i8(params.pos + delta);
-    params.pos = Tiny::clamp(params.pos, i8(0), i8(GameController::LeaderboardEntry::NAME_SIZE - 1));
+    params.pos
+        = Tiny::clamp(params.pos, i8(0), i8(GameController::LeaderboardEntry::NAME_SIZE - 1));
     if (params.pos != oldPos)
         gameController.lcd.controller.setCursor(u8(params.pos), 1);
 
@@ -640,6 +650,57 @@ void nameSelectionUpdate(const Input& input)
         currentPlayer.name[params.pos] = letter;
         gameController.lcd.controller.print(letter);
         gameController.lcd.controller.setCursor(u8(params.pos), 1);
+    }
+
+    if (input.joyPress == JoystickController::Press::Long) {
+        for (i8 i = GameController::LEADERBOARD_SIZE - 1; i >= params.rank + 1; --i)
+            gameController.leaderboard[i] = gameController.leaderboard[i - 1];
+        gameController.leaderboard[params.rank] = currentPlayer;
+
+        saveToStorage();
+
+        state = DEFAULT_MENU_STATE;
+    }
+}
+
+void leaderboardUpdate(const Input& input)
+{
+    auto& state = gameController.state;
+    auto& params = gameController.state.params.leaderboard;
+
+    if (state.entry) {
+        state.entry = false;
+
+        auto& entry = gameController.leaderboard[state.params.leaderboard.pos];
+        printfLCD(0, STR_FMT, UP_DOWN_ARROW_STR "LEADERBOARD <");
+        printfLCD(
+            1, "%1d. %-10s %2d", state.params.leaderboard.pos + 1, entry.name, entry.score);
+    }
+
+    const i8 delta = input.joyDir == JoystickController::Direction::Up
+        ? -1
+        : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
+    const auto newPos
+        = i8(Tiny::clamp(params.pos + delta, 0, GameController::LEADERBOARD_SIZE - 1));
+
+    if (newPos != params.pos) {
+        params.pos = newPos;
+
+        auto& entry = gameController.leaderboard[state.params.leaderboard.pos];
+        printfLCD(
+            1, "%1d. %-10s %2d", state.params.leaderboard.pos + 1, entry.name, entry.score);
+    }
+
+    if (input.joyDir == JoystickController::Direction::Left)
+        state = DEFAULT_MENU_STATE;
+}
+
+void saveToStorage()
+{
+    size_t eepromAddr = 0;
+    for (const auto& data : STORAGE_DATA) {
+        writeEEPROM(eepromAddr, data.addr, data.size);
+        eepromAddr += data.size;
     }
 }
 

@@ -58,10 +58,15 @@ public:
     };
     struct GameOverParams {
         u8 score;
+        i8 rank;
         bool highScore;
     };
     struct NameSelectionParams {
         u8 score;
+        i8 pos;
+        i8 rank;
+    };
+    struct LeaderboardUpdateParams {
         i8 pos;
     };
     struct State {
@@ -75,6 +80,7 @@ public:
             SettingSliderParams slider;
             GameOverParams gameOver;
             NameSelectionParams nameSelection;
+            LeaderboardUpdateParams leaderboard;
         } params;
     };
 
@@ -101,7 +107,7 @@ public:
     static constexpr i32 DEFAULT_BRIGHTNESS = 255;
     static constexpr i32 DEFAULT_MATRIX_INTENSITY = 8;
     static constexpr u8 LEADERBOARD_SIZE = 5;
-    static constexpr LeaderboardEntry LEADERBOARD_ENTRY_NONE = { "", 0 };
+    static constexpr LeaderboardEntry LEADERBOARD_ENTRY_NONE = { "**********", 0 };
     static constexpr LeaderboardEntry DEFAULT_LEADERBOARD[] = {
         LEADERBOARD_ENTRY_NONE,
         LEADERBOARD_ENTRY_NONE,
