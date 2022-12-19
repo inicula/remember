@@ -22,7 +22,7 @@ This game uses an 8x8 matrix display on which circles appear in a certain order.
 * LCD;
 * Buzzer;
 * Joystick;
-* Cables, resistors.
+* Arduino Uno, breadboard, cables, resistors.
 
 ## [Picture](https://0x0.st)
 
