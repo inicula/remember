@@ -853,7 +853,7 @@ void GameController::init()
     lcd.controller.clear();
 
     /* Initialize the default state */
-    state = { &greetUpdate, millis(), true, {} };
+    state = { &greetUpdate, 0, true, {} };
 }
 
 void GameController::update(const Input& input) { state.updateFunc(input); }
