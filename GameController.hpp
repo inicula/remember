@@ -15,7 +15,7 @@ using i16 = int16_t;
 using i32 = int32_t;
 using UpdateFunc = void (*)(const Input& input);
 
-class GameController {
+struct GameController {
 public:
     struct Position {
         bool operator==(const Position& rhs) const { return x == rhs.x && y == rhs.y; }
@@ -35,6 +35,7 @@ public:
         i8 score;
     };
 
+    /* Structs for the state union */
     struct MainMenuParams {
         i8 pos;
     };
@@ -92,11 +93,12 @@ public:
         } params;
     };
 
+    /* Member functions */
     GameController();
-
     void init();
     void update(const Input&);
 
+    /* Static constexpr variables */
     static constexpr u8 DIN_PIN = 12;
     static constexpr u8 CLOCK_PIN = 4;
     static constexpr u8 LOAD_PIN = 10;
@@ -125,6 +127,7 @@ public:
     };
 
 public:
+    /* Data members */
     struct {
         LiquidCrystal controller;
         i32 contrast;
