@@ -9,6 +9,10 @@ struct StorageEntry {
     const void* defaultAddr;
     u16 size;
 };
+struct SpecialChar {
+    u8 data[8];
+    char id;
+};
 
 /* Static constexpr class variables */
 constexpr u8 GameController::DEFAULT_CONTRAST;
@@ -63,6 +67,55 @@ static constexpr State DEFAULT_MENU_STATE = {
     0,
     true,
     { .mainMenu = { 0 } },
+};
+
+/* Special characters */
+#define UP_DOWN_ARROW_STR "\1"
+#define LEFT_RIGHT_ARROW_STR "\2"
+#define DOWN_ARROW_STR "\3"
+#define UP_DOWN_ARROW '\1'
+#define LEFT_RIGHT_ARROW '\2'
+#define DOWN_ARROW '\3'
+static SpecialChar SPECIAL_CHARS[] = {
+    {
+        {
+            0b00100,
+            0b01010,
+            0b10001,
+            0b00000,
+            0b00000,
+            0b10001,
+            0b01010,
+            0b00100,
+        },
+        UP_DOWN_ARROW,
+    },
+    {
+        {
+            0b00000,
+            0b00000,
+            0b01010,
+            0b10001,
+            0b10001,
+            0b01010,
+            0b00000,
+            0b00000,
+        },
+        LEFT_RIGHT_ARROW,
+    },
+    {
+        {
+            0b00000,
+            0b00000,
+            0b00000,
+            0b00000,
+            0b00000,
+            0b10001,
+            0b01010,
+            0b00100,
+        },
+        DOWN_ARROW,
+    },
 };
 
 /* Static variables */
@@ -147,9 +200,9 @@ void mainMenuUpdate(const Input& input)
 
     /* clang-format off */
     static constexpr const char* MENU_DESCRIPTORS[NumPositions] = {
-        [StartGame] = ">Start Game",
-        [Settings]  = ">Settings",
-        [About]     = ">About",
+        [StartGame] = DOWN_ARROW_STR " Start Game",
+        [Settings]  = UP_DOWN_ARROW_STR " Settings",
+        [About]     = "^ About",
     };
     static constexpr State MENU_TRANSITION_STATES[NumPositions] = {
         [StartGame] = {
@@ -188,7 +241,7 @@ void mainMenuUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, STR_FMT, "MAIN MENU");
+        printfLCD(0, STR_FMT, "MAIN MENU >");
         printfLCD(1, STR_FMT, MENU_DESCRIPTORS[params.pos]);
     }
 
@@ -500,10 +553,16 @@ void GameController::init()
 
     /* Initialize the LCD */
     lcd.controller.begin(NUM_COLS, NUM_ROWS);
+
     pinMode(CONTRAST_PIN, OUTPUT);
     pinMode(BRIGHTNESS_PIN, OUTPUT);
     analogWrite(CONTRAST_PIN, i16(lcd.contrast));
     analogWrite(BRIGHTNESS_PIN, i16(lcd.brightness));
+
+    for(auto& specialChar : SPECIAL_CHARS)
+        lcd.controller.createChar(u8(specialChar.id), specialChar.data);
+
+    lcd.controller.clear();
 
     /* Initialize the default state */
     state = { &greetUpdate, millis(), true, {} };
