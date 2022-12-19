@@ -576,7 +576,6 @@ void aboutUpdate(const Input& input)
         NumPositions,
     };
 
-    static constexpr u32 SCROLL_STEP = 500;
     static constexpr const char* DESCRIPTORS[NumPositions] = {
         [GameName] = DOWN_ARROW_STR " Game Name",
         [Author] = UP_DOWN_ARROW_STR " Author",
@@ -732,7 +731,7 @@ void nameSelectionUpdate(const Input& input)
         gameController.lcd.controller.setCursor(u8(params.pos), 1);
     }
 
-    if (input.joyPress == JoystickController::Press::Long) {
+    if (u8(input.joyPress)) {
         for (i8 i = GameController::LEADERBOARD_SIZE - 1; i >= params.rank + 1; --i)
             gameController.leaderboard[i] = gameController.leaderboard[i - 1];
         gameController.leaderboard[params.rank] = currentPlayer;
