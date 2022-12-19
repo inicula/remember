@@ -230,7 +230,7 @@ void mainMenuUpdate(const Input& input)
                     {0, 0},
                     0,
                     0,
-                    5,
+                    1,
                     0,
                     0,
                 }
@@ -287,6 +287,7 @@ void gameUpdate(const Input& input)
         ShowLevel,
         Playing,
     };
+    using Position = GameController::Position;
 
     auto& lc = gameController.matrix.controller;
     auto& state = gameController.state;
@@ -306,13 +307,17 @@ void gameUpdate(const Input& input)
 
             lc.clearDisplay(0);
             params.subState = u8(State::ShowLevel);
+            params.player = { i8(matrixColIndices[0]), i8(matrixRowIndices[0]) };
 
             break;
         case u8(State::ShowLevel):
             lc.clearDisplay(0);
             break;
-        default:
+        case u8(State::Playing):
+            lc.setLed(0, params.player.y, params.player.x, true);
             break;
+        default:
+            UNREACHABLE;
         }
     }
 
@@ -329,19 +334,82 @@ void gameUpdate(const Input& input)
             ++params.tileIdx;
         }
 
-        if (params.tileIdx == params.level + 1)
+        if (params.tileIdx == params.level + 1) {
+            state.entry = true;
             params.subState = u8(State::Playing);
+        }
 
         break;
     }
-    case u8(State::Playing):
+    case u8(State::Playing): {
         if (!params.captured && input.joyPress == JoystickController::Press::Long) {
             state.entry = true;
             state.beginTs = input.currentTs;
+            params.player = { i8(matrixColIndices[0]), i8(matrixRowIndices[0]) };
             params.tileIdx = 0;
             params.subState = u8(State::ShowLevel);
         }
+
+        const auto oldPos = params.player;
+        switch (input.joyDir) {
+        case JoystickController::Direction::Up:
+            ++params.player.y;
+            break;
+        case JoystickController::Direction::Down:
+            --params.player.y;
+            break;
+        case JoystickController::Direction::Left:
+            ++params.player.x;
+            break;
+        case JoystickController::Direction::Right:
+            --params.player.x;
+            break;
+        default:
+            break;
+        }
+
+        params.player = params.player.clamp(0, GameController::MATRIX_SIZE - 1);
+
+        if (oldPos != params.player) {
+            const auto yTileIdx = Tiny::find(matrixRowIndices, oldPos.y);
+            const auto xTileIdx = Tiny::find(matrixColIndices, oldPos.x);
+
+            if (xTileIdx != yTileIdx || xTileIdx >= params.level || xTileIdx < params.captured)
+                lc.setLed(0, oldPos.y, oldPos.x, false);
+
+            lc.setLed(0, params.player.y, params.player.x, true);
+        }
+
+        if (input.joyPress == JoystickController::Press::Short) {
+            if (params.player
+                == Position {
+                    i8(matrixColIndices[params.captured]),
+                    i8(matrixRowIndices[params.captured]),
+                }) {
+                ++params.captured;
+            } else {
+                const auto score = params.score;
+                state = { &gameOverUpdate, input.currentTs, true, {} };
+                state.params.gameOver.score = score;
+                break;
+            }
+
+            if (params.captured == params.level) {
+                state.entry = true;
+                state.beginTs = input.currentTs;
+                params = {
+                    {},
+                    0,
+                    u8(State::GenerateLevel),
+                    u8(params.level + 1),
+                    0,
+                    u8(params.score + 1),
+                };
+            }
+        }
+
         break;
+    }
     default:
         break;
     }

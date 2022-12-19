@@ -74,10 +74,20 @@ template <typename T, size_t N> void iota(Array<T, N>& array)
         el = i++;
 }
 
-template <typename T, size_t N> static void shuffle(Array<T, N>& array)
+template <typename T, size_t N> void shuffle(Array<T, N>& array)
 {
     for (size_t i = N - 1; i >= 1; --i)
         Tiny::swap(array[i], array[random(i + 1)]);
+}
+
+template <typename T, typename U, size_t N> size_t find(const Array<T, N>& arr, const U& value)
+{
+    for (size_t i = 0; i < N; ++i) {
+        if (arr[i] == value)
+            return i;
+    }
+
+    return N;
 }
 
 struct String {
