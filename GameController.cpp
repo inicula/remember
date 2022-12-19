@@ -48,6 +48,7 @@ static void highlightPress(JoystickController::Press);
 GameController gameController;
 
 /* Constexpr variables */
+static constexpr u16 GREET_MELODY_DURATION = 10000;
 static constexpr u8 INPUT_SOUND_DUR = 50;
 static constexpr const char* STR_FMT = "%-16s";
 static constexpr const char* INT_FMT = "%-16d";
@@ -120,7 +121,7 @@ static char printfBuffer[PRINTF_BUFSIZE] = {};
 static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
 static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixRowIndices = {};
 static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixColIndices = {};
-static MelodyPlayer mp(CONTRAPUNCTUS_1, 10000);
+static MelodyPlayer mp(CONTRAPUNCTUS_1, GREET_MELODY_DURATION);
 
 template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&... args)
 {
