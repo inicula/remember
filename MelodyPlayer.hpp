@@ -62,6 +62,7 @@ private:
     u32 past;
 };
 
+/* Beginning of the first fugue from Bach's 'The Art of Fugue' (BWV 1080) */
 static constexpr Note CONTRAPUNCTUS_1[] = {
     { NOTE_D5, 1 },
     { 0, 3 },
