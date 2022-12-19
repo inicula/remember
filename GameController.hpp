@@ -58,8 +58,10 @@ public:
     };
     struct GameOverParams {
         u8 score;
+        bool highScore;
     };
     struct NameSelectionParams {
+        u8 score;
         i8 pos;
     };
     struct State {

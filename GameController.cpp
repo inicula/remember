@@ -37,7 +37,6 @@ static void gameUpdate(const Input&);
 static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
-static void highScoreUpdate(const Input&);
 static void nameSelectionUpdate(const Input&);
 
 /* Extern variables */
@@ -197,12 +196,34 @@ void gameOverUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
+        size_t rank = 0;
+        while (rank < GameController::LEADERBOARD_SIZE
+            && params.score <= gameController.leaderboard[rank].score)
+            ++rank;
+
+        if (rank < GameController::LEADERBOARD_SIZE) {
+            gameController.leaderboard[rank].score = i8(params.score);
+            params.highScore = true;
+        }
+
         printfLCD(0, STR_FMT, "GAME OVER!");
-        printfLCD(1, "%-10s%6d", "Score:", params.score);
+        printfLCD(1, "%s %-2d %s %2d", "Score", params.score, "Rank", rank + 1);
     }
 
-    if (input.currentTs - state.beginTs > DURATION)
-        state = DEFAULT_MENU_STATE;
+    if (input.currentTs - state.beginTs > DURATION) {
+        if (params.highScore) {
+            const auto score = params.score;
+            state = {
+                &nameSelectionUpdate,
+                input.currentTs,
+                true,
+                {},
+            };
+            state.params.nameSelection.score = score;
+        } else {
+            state = DEFAULT_MENU_STATE;
+        }
+    }
 }
 
 void mainMenuUpdate(const Input& input)
@@ -326,7 +347,7 @@ void gameUpdate(const Input& input)
         const auto onTime = DEFAULT_TIME / 2;
         const u32 intervalNum = (input.currentTs - state.beginTs) / onTime;
         const auto oddInterval = intervalNum % 2;
-        if (oddInterval && ((intervalNum + 1) / 2) == (params.tileIdx + 1)) {
+        if (oddInterval && ((intervalNum + 1) / 2) == (params.tileIdx + 1u)) {
             if (params.tileIdx < params.level)
                 lc.setLed(0, matrixRowIndices[params.tileIdx],
                     matrixColIndices[params.tileIdx], true);
@@ -480,6 +501,9 @@ void settingsUpdate(const Input& input)
         },
         [DefaultState] = {
             &setDefaultState,
+            {},
+            {},
+            {}
         }
     };
     /* clang-format on */
@@ -569,30 +593,6 @@ void sliderUpdate(const Input& input)
         state = { &settingsUpdate, 0, true, {} };
 }
 
-void highScoreUpdate(const Input& input)
-{
-    static constexpr u32 SCROLL_STEP = 250;
-    static constexpr Tiny::String CONGRATS_MSG = "CONGRATS! YOUR LEADERBOARD POSITION:";
-
-    auto& state = gameController.state;
-    auto& params = gameController.state.params.slider;
-
-    if (state.entry) {
-        state.entry = false;
-
-        printfLCD(0, STR_FMT, CONGRATS_MSG.ptr);
-    }
-
-    const u32 intervalNum = (input.currentTs - state.beginTs) / SCROLL_STEP;
-    const auto oddInterval = intervalNum % 2;
-    if (oddInterval)
-        printfLCD(0, STR_FMT,
-            CONGRATS_MSG.ptr + Tiny::clamp((intervalNum + 1) / 2, 0u, CONGRATS_MSG.len));
-
-    if (intervalNum / 2 > CONGRATS_MSG.len)
-        state = DEFAULT_MENU_STATE;
-}
-
 void nameSelectionUpdate(const Input& input)
 {
     static constexpr Tiny::String NAME_ALPHABET = " ABCDEFGHIJKLMNOPRSTUVWXYZ0123456789";
@@ -602,6 +602,11 @@ void nameSelectionUpdate(const Input& input)
 
     if (state.entry) {
         state.entry = false;
+
+        i8 pos = GameController::LEADERBOARD_SIZE - 1;
+        while (gameController.leaderboard[pos].score != params.score)
+            --pos;
+        params.pos = pos;
 
         printfLCD(0, STR_FMT, "Your name:");
         gameController.lcd.controller.setCursor(0, 1);
@@ -615,7 +620,7 @@ void nameSelectionUpdate(const Input& input)
     const auto oldPos = params.pos;
 
     params.pos = i8(params.pos + delta);
-    params.pos = Tiny::clamp(params.pos, 0, GameController::LeaderboardEntry::NAME_SIZE - 1);
+    params.pos = Tiny::clamp(params.pos, i8(0), i8(GameController::LeaderboardEntry::NAME_SIZE - 1));
     if (params.pos != oldPos)
         gameController.lcd.controller.setCursor(u8(params.pos), 1);
 
