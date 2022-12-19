@@ -69,6 +69,13 @@ public:
     struct LeaderboardUpdateParams {
         i8 pos;
     };
+    struct AboutUpdateParams {
+        u8 subState;
+        i8 pos;
+        i16 shift;
+        const Tiny::String* header;
+        const Tiny::String* content;
+    };
     struct State {
         UpdateFunc updateFunc;
         u32 beginTs;
@@ -81,6 +88,7 @@ public:
             GameOverParams gameOver;
             NameSelectionParams nameSelection;
             LeaderboardUpdateParams leaderboard;
+            AboutUpdateParams about;
         } params;
     };
 

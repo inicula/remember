@@ -282,7 +282,15 @@ void mainMenuUpdate(const Input& input)
             &aboutUpdate,
             0,
             true,
-            {}
+            {
+                .about = {
+                    0,
+                    0,
+                    0,
+                    nullptr,
+                    nullptr,
+                }
+            }
         },
     };
     /* clang-format on */
@@ -555,26 +563,98 @@ void settingsUpdate(const Input& input)
 
 void aboutUpdate(const Input& input)
 {
+    enum State : u8 {
+        Disengaged = 0,
+        Engaged,
+    };
+
+    enum AboutPosition : i8 {
+        GameName,
+        Author,
+        GitLink,
+        HowToPlay,
+        NumPositions,
+    };
+
     static constexpr u32 SCROLL_STEP = 500;
-    static constexpr Tiny::String GIT_LINK = "github.com/niculaionut/remember";
+    static constexpr const char* DESCRIPTORS[NumPositions] = {
+        [GameName] = DOWN_ARROW_STR " Game Name",
+        [Author] = UP_DOWN_ARROW_STR " Author",
+        [GitLink] = UP_DOWN_ARROW_STR "Github Link",
+        [HowToPlay] = "^ How To Play",
+    };
+    static constexpr Tiny::Pair<Tiny::String, Tiny::String> CONTENT[NumPositions] = {
+        [GameName] = { "Game Name", "Remember" },
+        [Author] = { "Author", "Nicula Ionut 334" },
+        [GitLink] = { "Git Link", "github.com/niculaionut/remember" },
+        [HowToPlay] = { "How To Play",
+            "At the start of each level, pay attention to the order in which the "
+            "circles light up. Then, recreate the order by moving your joystick "
+            "and pressing it. Keep in mind that at the start of every level, your "
+            "initial position is the same as the first circle's position. You can view the "
+            "order in which the circles appear once again by pressing the joystick for 1 "
+            "second, but only if you haven't yet started reconstructing the order." },
+    };
 
     auto& state = gameController.state;
+    auto& params = gameController.state.params.about;
 
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, STR_FMT, "< REMEMBER");
-        printfLCD(1, STR_FMT, "github.com/niculaionut/remember");
+        switch (params.subState) {
+        case Disengaged:
+            printfLCD(0, "<> %-13s", "ABOUT");
+            printfLCD(1, STR_FMT, DESCRIPTORS[params.pos]);
+            break;
+        case Engaged:
+            printfLCD(0, "< %-14s", params.header->ptr);
+            printfLCD(1, STR_FMT, params.content->ptr);
+            break;
+        }
     }
 
-    const u32 intervalNum = (input.currentTs - state.beginTs) / SCROLL_STEP;
-    const auto oddInterval = intervalNum % 2;
-    if (oddInterval)
-        printfLCD(
-            1, STR_FMT, GIT_LINK.ptr + Tiny::clamp((intervalNum + 1) / 2, 0u, GIT_LINK.len));
+    switch (params.subState) {
+    case Disengaged: {
+        const auto oldPos = params.pos;
 
-    if (input.joyDir == JoystickController::Direction::Left || intervalNum / 2 > GIT_LINK.len)
-        state = DEFAULT_MENU_STATE;
+        const i32 delta = input.joyDir == JoystickController::Direction::Up
+            ? -1
+            : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
+        params.pos = Tiny::clamp(i8(params.pos + delta), 0, NumPositions - 1);
+
+        if (params.pos != oldPos)
+            printfLCD(1, STR_FMT, DESCRIPTORS[params.pos]);
+
+        if (input.joyDir == JoystickController::Direction::Left)
+            state = DEFAULT_MENU_STATE;
+
+        if (input.joyDir == JoystickController::Direction::Right) {
+            state.entry = true;
+            params.subState = Engaged;
+            params.header = &CONTENT[params.pos].first;
+            params.content = &CONTENT[params.pos].second;
+        }
+
+        break;
+    }
+    case Engaged: {
+        const auto oldShift = params.shift;
+        const i16 delta = input.joyDir == JoystickController::Direction::Up
+            ? -5
+            : (input.joyDir == JoystickController::Direction::Down ? 5 : 0);
+        params.shift = Tiny::clamp(params.shift + delta, i16(0), i16(params.content->len - 1));
+
+        if (params.shift != oldShift)
+            printfLCD(1, STR_FMT, params.content->ptr + params.shift);
+
+        if (input.joyDir == JoystickController::Direction::Left) {
+            state.entry = true;
+            params.subState = Disengaged;
+        }
+        break;
+    }
+    }
 }
 
 void sliderUpdate(const Input& input)
