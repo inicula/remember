@@ -3,15 +3,15 @@
 #include <Arduino.h>
 
 struct Note {
-    unsigned int freq;
-    unsigned long slice;
+    u16 freq;
+    u32 slice;
 };
 
 using Melody = const Note*;
 
-template <typename T> static unsigned getTotalSlices(const T& notes)
+template <typename T> static u32 getTotalSlices(const T& notes)
 {
-    unsigned sum = 0;
+    u32 sum = 0;
     for (const auto& note : notes)
         sum += note.slice;
     return sum;
@@ -20,7 +20,7 @@ template <typename T> static unsigned getTotalSlices(const T& notes)
 class MelodyPlayer {
 public:
     template <typename T>
-    constexpr MelodyPlayer(const T& notes, unsigned totalDuration)
+    constexpr MelodyPlayer(const T& notes, u16 totalDuration)
         : mel(&notes[0])
         , numNotes(sizeof(notes) / sizeof(notes[0]))
         , msPerSlice(totalDuration / getTotalSlices(notes))
@@ -58,10 +58,10 @@ public:
 
 private:
     Melody mel;
-    unsigned numNotes;
-    unsigned long msPerSlice;
-    unsigned i;
-    unsigned long past;
+    u16 numNotes;
+    u32 msPerSlice;
+    u16 i;
+    u32 past;
 };
 
 static constexpr Note CONTRAPUNCTUS_1[] = {

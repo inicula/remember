@@ -633,7 +633,7 @@ void aboutUpdate(const Input& input)
         const i32 delta = input.joyDir == JoystickController::Direction::Up
             ? -1
             : (input.joyDir == JoystickController::Direction::Down ? 1 : 0);
-        params.pos = Tiny::clamp(i8(params.pos + delta), 0, NumPositions - 1);
+        params.pos = Tiny::clamp(i8(params.pos + delta), i8(0), i8(NumPositions - 1));
 
         if (params.pos != oldPos)
             printfLCD(1, STR_FMT, DESCRIPTORS[params.pos]);
