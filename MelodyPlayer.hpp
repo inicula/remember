@@ -31,10 +31,8 @@ public:
 
     void init() { pinMode(BUZZER_PIN, OUTPUT); }
 
-    void play()
+    void play(const u32 currentTs)
     {
-        const auto currentTs = millis();
-
         if (i == numNotes) {
             i = 0;
             past = currentTs;

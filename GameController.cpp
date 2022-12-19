@@ -187,7 +187,7 @@ void greetUpdate(const Input& input)
         printfLCD(1, STR_FMT, "A Memory Game");
     }
 
-    mp.play();
+    mp.play(input.currentTs);
 
     if (u8(input.joyPress)) {
         mp.stop();
