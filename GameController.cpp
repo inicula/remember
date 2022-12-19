@@ -270,6 +270,7 @@ void mainMenuUpdate(const Input& input)
                     1,
                     0,
                     0,
+                    0,
                 }
             }
         },
@@ -338,6 +339,7 @@ void mainMenuUpdate(const Input& input)
 void gameUpdate(const Input& input)
 {
     static constexpr u32 DEFAULT_TIME = 500;
+    static constexpr i16 NUM_REVIEWS_LIMIT = 4;
 
     enum class State : u8 {
         GenerateLevel = 0,
@@ -350,13 +352,15 @@ void gameUpdate(const Input& input)
     auto& state = gameController.state;
     auto& params = gameController.state.params.game;
 
+    const auto maxReviews
+        = Tiny::clamp(NUM_REVIEWS_LIMIT - params.level / 4, 1, NUM_REVIEWS_LIMIT);
     if (state.entry) {
         state.entry = false;
 
         switch (params.subState) {
         case u8(State::GenerateLevel):
-            printfLCD(0, STR_FMT, "Score:");
-            printfLCD(1, INT_FMT, params.score);
+            printfLCD(0, "%-8s%8s", "Score", "Reviews");
+            printfLCD(1, "%-8d%8d", params.score, maxReviews - params.usedReviews);
 
             randomSeed(micros());
             Tiny::shuffle(matrixRowIndices);
@@ -369,6 +373,7 @@ void gameUpdate(const Input& input)
             break;
         case u8(State::ShowLevel):
             lc.clearDisplay(0);
+            printfLCD(1, "%-8d%8d", params.score, maxReviews - params.usedReviews);
             break;
         case u8(State::Playing):
             lc.setLed(0, params.player.y, params.player.x, true);
@@ -399,7 +404,8 @@ void gameUpdate(const Input& input)
         break;
     }
     case u8(State::Playing): {
-        if (!params.captured && input.joyPress == JoystickController::Press::Long) {
+        if (!params.captured && params.usedReviews < maxReviews
+            && input.joyPress == JoystickController::Press::Long) {
             highlightPress(input.joyPress);
 
             state.entry = true;
@@ -407,6 +413,8 @@ void gameUpdate(const Input& input)
             params.player = { i8(matrixColIndices[0]), i8(matrixRowIndices[0]) };
             params.tileIdx = 0;
             params.subState = u8(State::ShowLevel);
+            ++params.usedReviews;
+            break;
         }
 
         highlightMovement(input.joyDir);
@@ -468,6 +476,7 @@ void gameUpdate(const Input& input)
                     u8(params.level + 1),
                     0,
                     u8(params.score + 1),
+                    0,
                 };
             }
         }
@@ -599,7 +608,7 @@ void aboutUpdate(const Input& input)
     static constexpr const char* DESCRIPTORS[NumPositions] = {
         [GameName] = DOWN_ARROW_STR " Game Name",
         [Author] = UP_DOWN_ARROW_STR " Author",
-        [GitLink] = UP_DOWN_ARROW_STR "Github Link",
+        [GitLink] = "^ Github Link",
     };
     static constexpr Tiny::Pair<Tiny::String, Tiny::String> CONTENT[NumPositions] = {
         [GameName] = { "Game Name", "Remember" },
@@ -714,7 +723,6 @@ void nameSelectionUpdate(const Input& input)
         printfLCD(1, STR_FMT, currentPlayer.name);
 
         gameController.lcd.controller.setCursor(0, 1);
-        gameController.lcd.controller.noAutoscroll();
         gameController.lcd.controller.blink();
     }
 
@@ -757,6 +765,7 @@ void nameSelectionUpdate(const Input& input)
         highlightPress(input.joyPress);
         saveToStorage();
 
+        gameController.lcd.controller.noBlink();
         state = DEFAULT_MENU_STATE;
     }
 }

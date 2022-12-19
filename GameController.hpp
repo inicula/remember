@@ -46,6 +46,7 @@ public:
         u8 level;
         u8 captured;
         u8 score;
+        u8 usedReviews;
     };
     struct SettingsParams {
         i8 pos;
