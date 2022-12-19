@@ -15,8 +15,8 @@ struct SpecialChar {
 };
 
 /* Static constexpr class variables */
-constexpr u8 GameController::DEFAULT_CONTRAST;
-constexpr u8 GameController::DEFAULT_BRIGHTNESS;
+constexpr i32 GameController::DEFAULT_CONTRAST;
+constexpr i32 GameController::DEFAULT_BRIGHTNESS;
 constexpr GameController::LeaderboardEntry GameController::DEFAULT_LEADERBOARD[];
 
 /* Template function declarations */
@@ -71,11 +71,9 @@ static constexpr State DEFAULT_MENU_STATE = {
 
 /* Special characters */
 #define UP_DOWN_ARROW_STR "\1"
-#define LEFT_RIGHT_ARROW_STR "\2"
-#define DOWN_ARROW_STR "\3"
+#define DOWN_ARROW_STR "\2"
 #define UP_DOWN_ARROW '\1'
-#define LEFT_RIGHT_ARROW '\2'
-#define DOWN_ARROW '\3'
+#define DOWN_ARROW '\2'
 static SpecialChar SPECIAL_CHARS[] = {
     {
         {
@@ -89,19 +87,6 @@ static SpecialChar SPECIAL_CHARS[] = {
             0b00100,
         },
         UP_DOWN_ARROW,
-    },
-    {
-        {
-            0b00000,
-            0b00000,
-            0b01010,
-            0b10001,
-            0b10001,
-            0b01010,
-            0b00000,
-            0b00000,
-        },
-        LEFT_RIGHT_ARROW,
     },
     {
         {
@@ -241,7 +226,7 @@ void mainMenuUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, STR_FMT, "MAIN MENU >");
+        printfLCD(0, STR_FMT, "> MAIN MENU");
         printfLCD(1, STR_FMT, MENU_DESCRIPTORS[params.pos]);
     }
 
@@ -318,9 +303,9 @@ void settingsUpdate(const Input& input)
 
     /* clang-format off */
     static constexpr const char* SETTINGS_DESCRIPTORS[NumPositions] = {
-        [Contrast]   = ">Contrast",
-        [Brightness] = ">Brightness",
-        [DefaultState] = ">Default state",
+        [Contrast]   = DOWN_ARROW_STR " Contrast",
+        [Brightness] = UP_DOWN_ARROW_STR " Brightness",
+        [DefaultState] = "^ Default state",
     };
     static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
         [Contrast] = {
@@ -329,7 +314,7 @@ void settingsUpdate(const Input& input)
             true,
             {
                 .slider = {
-                    "CONTRAST",
+                    "< CONTRAST",
                     &gameController.lcd.contrast,
                     0,
                     255,
@@ -343,7 +328,7 @@ void settingsUpdate(const Input& input)
             true,
             {
                 .slider = {
-                    "BRIGHTNESS",
+                    "< BRIGHTNESS",
                     &gameController.lcd.brightness,
                     0,
                     255,
@@ -363,7 +348,7 @@ void settingsUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, STR_FMT, "SETTINGS");
+        printfLCD(0, STR_FMT, "<> SETTINGS");
         printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
 
         size_t eepromAddr = 0;
@@ -392,7 +377,7 @@ void settingsUpdate(const Input& input)
 
 void aboutUpdate(const Input& input)
 {
-    static constexpr u32 SCROLL_STEP = 250;
+    static constexpr u32 SCROLL_STEP = 500;
     static constexpr Tiny::String GIT_LINK = "github.com/niculaionut/remember";
 
     auto& state = gameController.state;
@@ -400,7 +385,7 @@ void aboutUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
-        printfLCD(0, STR_FMT, "REMEMBER");
+        printfLCD(0, STR_FMT, "< REMEMBER");
         printfLCD(1, STR_FMT, "github.com/niculaionut/remember");
     }
 
@@ -410,7 +395,7 @@ void aboutUpdate(const Input& input)
         printfLCD(
             1, STR_FMT, GIT_LINK.ptr + Tiny::clamp((intervalNum + 1) / 2, 0u, GIT_LINK.len));
 
-    if (intervalNum / 2 > GIT_LINK.len)
+    if (input.joyDir == JoystickController::Direction::Left || intervalNum / 2 > GIT_LINK.len)
         state = DEFAULT_MENU_STATE;
 }
 
@@ -425,7 +410,7 @@ void sliderUpdate(const Input& input)
         state.entry = false;
 
         printfLCD(0, STR_FMT, params.description);
-        printfLCD(1, "%-10s%6d", "Up/Down", *params.value);
+        printfLCD(1, "%-10c%6d", UP_DOWN_ARROW, *params.value);
     }
 
     const i32 delta = input.joyDir == JoystickController::Direction::Up
@@ -435,7 +420,7 @@ void sliderUpdate(const Input& input)
 
     if (*params.value != newValue) {
         *params.value = newValue;
-        printfLCD(1, "%-10s%6d", "Up/Down", newValue);
+        printfLCD(1, "%-10c%6d", UP_DOWN_ARROW, newValue);
         params.callback(newValue);
     }
 
@@ -469,12 +454,8 @@ void highScoreUpdate(const Input& input)
 
 void setDefaultState(const Input&)
 {
-    size_t eepromAddr = 0;
-    for (const auto& data : STORAGE_DATA) {
-        writeEEPROM(eepromAddr, data.defaultAddr, data.size);
+    for (auto& data : STORAGE_DATA)
         memcpy(data.addr, data.defaultAddr, data.size);
-        eepromAddr += data.size;
-    }
 
     refreshBrightness(gameController.lcd.contrast);
     refreshBrightness(gameController.lcd.brightness);
@@ -559,7 +540,7 @@ void GameController::init()
     analogWrite(CONTRAST_PIN, i16(lcd.contrast));
     analogWrite(BRIGHTNESS_PIN, i16(lcd.brightness));
 
-    for(auto& specialChar : SPECIAL_CHARS)
+    for (auto& specialChar : SPECIAL_CHARS)
         lcd.controller.createChar(u8(specialChar.id), specialChar.data);
 
     lcd.controller.clear();

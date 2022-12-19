@@ -94,8 +94,8 @@ public:
     static constexpr u8 NUM_COLS = 16;
     static constexpr u8 CONTRAST_PIN = 6;
     static constexpr u8 BRIGHTNESS_PIN = 5;
-    static constexpr u8 DEFAULT_CONTRAST = 90;
-    static constexpr u8 DEFAULT_BRIGHTNESS = 255;
+    static constexpr i32 DEFAULT_CONTRAST = 90;
+    static constexpr i32 DEFAULT_BRIGHTNESS = 255;
     static constexpr u8 DEFAULT_MATRIX_BRIGHTNESS = 255;
     static constexpr u8 LEADERBOARD_SIZE = 5;
     static constexpr LeaderboardEntry LEADERBOARD_ENTRY_NONE = { "", 0 };
