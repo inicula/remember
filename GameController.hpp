@@ -53,6 +53,7 @@ public:
         const char* description;
         i32* value;
         i32 min, max;
+        i32 step;
         void (*callback)(i32);
     };
     struct GameOverParams {
@@ -96,7 +97,7 @@ public:
     static constexpr u8 BRIGHTNESS_PIN = 5;
     static constexpr i32 DEFAULT_CONTRAST = 90;
     static constexpr i32 DEFAULT_BRIGHTNESS = 255;
-    static constexpr u8 DEFAULT_MATRIX_BRIGHTNESS = 255;
+    static constexpr i32 DEFAULT_MATRIX_INTENSITY = 8;
     static constexpr u8 LEADERBOARD_SIZE = 5;
     static constexpr LeaderboardEntry LEADERBOARD_ENTRY_NONE = { "", 0 };
     static constexpr LeaderboardEntry DEFAULT_LEADERBOARD[] = {
@@ -113,7 +114,10 @@ public:
         i32 contrast;
         i32 brightness;
     } lcd;
-    LedControl lc;
+    struct {
+        LedControl controller;
+        i32 intensity;
+    } matrix;
     State state;
     LeaderboardEntry leaderboard[LEADERBOARD_SIZE];
 };

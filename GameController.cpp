@@ -17,16 +17,19 @@ struct SpecialChar {
 /* Static constexpr class variables */
 constexpr i32 GameController::DEFAULT_CONTRAST;
 constexpr i32 GameController::DEFAULT_BRIGHTNESS;
+constexpr i32 GameController::DEFAULT_MATRIX_INTENSITY;
 constexpr GameController::LeaderboardEntry GameController::DEFAULT_LEADERBOARD[];
 
 /* Template function declarations */
 template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
+template <bool INITIALIZE = false> static void setDefaultState(const Input&);
 
 /* Function declarations */
 static void readEEPROM(size_t, void*, size_t);
 static void writeEEPROM(size_t, const void*, size_t);
 static void refreshContrast(i32);
 static void refreshBrightness(i32);
+static void refreshIntensity(i32 value);
 static void greetUpdate(const Input&);
 static void gameOverUpdate(const Input&);
 static void mainMenuUpdate(const Input&);
@@ -35,7 +38,6 @@ static void settingsUpdate(const Input&);
 static void aboutUpdate(const Input&);
 static void sliderUpdate(const Input&);
 static void highScoreUpdate(const Input&);
-static void setDefaultState(const Input&);
 static void nameSelectionUpdate(const Input&);
 
 /* Extern variables */
@@ -55,6 +57,11 @@ static constexpr StorageEntry STORAGE_DATA[] = {
         &gameController.lcd.brightness,
         &GameController::DEFAULT_BRIGHTNESS,
         sizeof(gameController.lcd.brightness),
+    },
+    {
+        &gameController.matrix.intensity,
+        &GameController::DEFAULT_MATRIX_INTENSITY,
+        sizeof(gameController.matrix.intensity),
     },
     {
         &gameController.leaderboard,
@@ -117,6 +124,25 @@ template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&...
     gameController.lcd.controller.print(&printfBuffer[0]);
 }
 
+template <bool INITIALIZE> void setDefaultState(const Input&)
+{
+    size_t eepromAddr = 0;
+    for (auto& data : STORAGE_DATA) {
+        if constexpr (INITIALIZE) {
+            writeEEPROM(eepromAddr, data.defaultAddr, data.size);
+            eepromAddr += data.size;
+        }
+
+        memcpy(data.addr, data.defaultAddr, data.size);
+    }
+
+    refreshContrast(gameController.lcd.contrast);
+    refreshBrightness(gameController.lcd.brightness);
+    refreshIntensity(gameController.matrix.intensity);
+
+    gameController.state = { &settingsUpdate, 0, true, {} };
+}
+
 static void readEEPROM(size_t eepromBaseAddr, void* addr, size_t count)
 {
     u8 buffer[count];
@@ -139,6 +165,11 @@ void refreshContrast(i32 value) { analogWrite(GameController::CONTRAST_PIN, i16(
 
 void refreshBrightness(i32 value) { analogWrite(GameController::BRIGHTNESS_PIN, i16(value)); }
 
+void refreshIntensity(i32 value)
+{
+    gameController.matrix.controller.setIntensity(0, i16(value));
+}
+
 void greetUpdate(const Input& input)
 {
     static constexpr u32 DURATION = 5000;
@@ -152,7 +183,7 @@ void greetUpdate(const Input& input)
         printfLCD(1, STR_FMT, "A Memory Game");
     }
 
-    if (input.currentTs - state.beginTs > DURATION)
+    if (u8(input.joyDir) || u8(input.joyPress) || input.currentTs - state.beginTs > DURATION)
         state = DEFAULT_MENU_STATE;
 }
 
@@ -257,7 +288,7 @@ void startGameUpdate(const Input& input)
         Game,
     };
 
-    auto& lc = gameController.lc;
+    auto& lc = gameController.matrix.controller;
     auto& state = gameController.state;
     auto& params = gameController.state.params.game;
 
@@ -297,6 +328,7 @@ void settingsUpdate(const Input& input)
     enum SettingsPosition : u8 {
         Contrast = 0,
         Brightness,
+        Intensity,
         DefaultState,
         NumPositions,
     };
@@ -305,6 +337,7 @@ void settingsUpdate(const Input& input)
     static constexpr const char* SETTINGS_DESCRIPTORS[NumPositions] = {
         [Contrast]   = DOWN_ARROW_STR " Contrast",
         [Brightness] = UP_DOWN_ARROW_STR " Brightness",
+        [Intensity] = UP_DOWN_ARROW_STR " Intensity",
         [DefaultState] = "^ Default state",
     };
     static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
@@ -318,6 +351,7 @@ void settingsUpdate(const Input& input)
                     &gameController.lcd.contrast,
                     0,
                     255,
+                    10,
                     &refreshContrast
                 }
             }
@@ -332,7 +366,23 @@ void settingsUpdate(const Input& input)
                     &gameController.lcd.brightness,
                     0,
                     255,
+                    10,
                     &refreshBrightness
+                }
+            }
+        },
+        [Intensity] = {
+            &sliderUpdate,
+            0,
+            true,
+            {
+                .slider = {
+                    "< INTENSITY",
+                    &gameController.matrix.intensity,
+                    0,
+                    15,
+                    1,
+                    &refreshIntensity
                 }
             }
         },
@@ -401,8 +451,6 @@ void aboutUpdate(const Input& input)
 
 void sliderUpdate(const Input& input)
 {
-    static constexpr i32 STEP = 10;
-
     auto& state = gameController.state;
     auto& params = gameController.state.params.slider;
 
@@ -416,7 +464,8 @@ void sliderUpdate(const Input& input)
     const i32 delta = input.joyDir == JoystickController::Direction::Up
         ? 1
         : (input.joyDir == JoystickController::Direction::Down ? -1 : 0);
-    const i32 newValue = Tiny::clamp(*params.value + STEP * delta, params.min, params.max);
+    const i32 newValue
+        = Tiny::clamp(*params.value + params.step * delta, params.min, params.max);
 
     if (*params.value != newValue) {
         *params.value = newValue;
@@ -450,17 +499,6 @@ void highScoreUpdate(const Input& input)
 
     if (intervalNum / 2 > CONGRATS_MSG.len)
         state = DEFAULT_MENU_STATE;
-}
-
-void setDefaultState(const Input&)
-{
-    for (auto& data : STORAGE_DATA)
-        memcpy(data.addr, data.defaultAddr, data.size);
-
-    refreshBrightness(gameController.lcd.contrast);
-    refreshBrightness(gameController.lcd.brightness);
-
-    gameController.state = { &settingsUpdate, 0, true, {} };
 }
 
 void nameSelectionUpdate(const Input& input)
@@ -510,7 +548,7 @@ void nameSelectionUpdate(const Input& input)
 
 GameController::GameController()
     : lcd({ { RS_PIN, ENABLE_PIN, D4, D5, D6, D7 }, {}, {} })
-    , lc(DIN_PIN, CLOCK_PIN, LOAD_PIN, 1)
+    , matrix({ { DIN_PIN, CLOCK_PIN, LOAD_PIN, 1 }, DEFAULT_MATRIX_INTENSITY })
 {
 }
 
@@ -528,9 +566,9 @@ void GameController::init()
     }
 
     /* Initialize the matrix display */
-    lc.shutdown(0, false);
-    lc.setIntensity(0, DEFAULT_MATRIX_BRIGHTNESS);
-    lc.clearDisplay(0);
+    matrix.controller.shutdown(0, false);
+    matrix.controller.setIntensity(0, i16(matrix.intensity));
+    matrix.controller.clearDisplay(0);
 
     /* Initialize the LCD */
     lcd.controller.begin(NUM_COLS, NUM_ROWS);
