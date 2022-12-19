@@ -1,5 +1,5 @@
 #pragma once
-#include "notes.h"
+#include "notes.hpp"
 #include <Arduino.h>
 
 struct Note {

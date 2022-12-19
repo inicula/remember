@@ -1,5 +1,5 @@
 #include "GameController.hpp"
-#include "music.h"
+#include "MelodyPlayer.hpp"
 
 /* Typedefs */
 using State = GameController::State;
