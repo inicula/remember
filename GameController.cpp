@@ -70,6 +70,11 @@ static constexpr StorageEntry STORAGE_DATA[] = {
         sizeof(gameController.matrix.intensity),
     },
     {
+        &soundIsEnabled,
+        &SOUND_IS_ENABLED_DEFAULT,
+        sizeof(soundIsEnabled),
+    },
+    {
         &gameController.leaderboard,
         &GameController::DEFAULT_LEADERBOARD,
         sizeof(gameController.leaderboard),
@@ -494,6 +499,7 @@ void settingsUpdate(const Input& input)
         Contrast = 0,
         Brightness,
         Intensity,
+        Sound,
         DefaultState,
         NumPositions,
     };
@@ -503,6 +509,7 @@ void settingsUpdate(const Input& input)
         [Contrast]   = DOWN_ARROW_STR " Contrast",
         [Brightness] = UP_DOWN_ARROW_STR " Brightness",
         [Intensity] = UP_DOWN_ARROW_STR " Intensity",
+        [Sound] = UP_DOWN_ARROW_STR " Sound",
         [DefaultState] = "^ Default state",
     };
     static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
@@ -548,6 +555,21 @@ void settingsUpdate(const Input& input)
                     15,
                     1,
                     &refreshIntensity
+                }
+            }
+        },
+        [Sound] = {
+            &sliderUpdate,
+            0,
+            true,
+            {
+                .slider = {
+                    "< SOUND",
+                    &soundIsEnabled,
+                    0,
+                    1,
+                    1,
+                    nullptr
                 }
             }
         },
@@ -709,7 +731,9 @@ void sliderUpdate(const Input& input)
     if (*params.value != newValue) {
         *params.value = newValue;
         printfLCD(1, "%-10c%6d", UP_DOWN_ARROW, newValue);
-        params.callback(newValue);
+
+        if (params.callback != nullptr)
+            params.callback(newValue);
     }
 
     if (input.joyDir == JoystickController::Direction::Left) {
@@ -824,13 +848,13 @@ void saveToStorage()
 
 void highlightMovement(const JoystickController::Direction joyDir)
 {
-    if (u8(joyDir))
+    if (u8(joyDir) && soundIsEnabled)
         tone(MelodyPlayer::BUZZER_PIN, NOTE_FS3, INPUT_SOUND_DUR);
 }
 
 void highlightPress(const JoystickController::Press joyPress)
 {
-    if (u8(joyPress))
+    if (u8(joyPress) && soundIsEnabled)
         tone(MelodyPlayer::BUZZER_PIN, NOTE_FS7, INPUT_SOUND_DUR);
 }
 

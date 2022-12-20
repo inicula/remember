@@ -2,6 +2,8 @@
 #include "notes.hpp"
 #include <Arduino.h>
 
+using i32 = int32_t;
+
 struct Note {
     u16 freq;
     u8 slice;
@@ -17,7 +19,10 @@ template <typename T> static u32 getTotalSlices(const T& notes)
     return sum;
 }
 
-class MelodyPlayer {
+static constexpr i32 SOUND_IS_ENABLED_DEFAULT = true;
+static i32 soundIsEnabled = true;
+
+struct MelodyPlayer {
 public:
     template <typename T>
     constexpr MelodyPlayer(const T& notes, u16 totalDuration)
@@ -40,7 +45,7 @@ public:
 
         const auto note = mel[i].freq;
         if (note)
-            tone(BUZZER_PIN, note);
+            toneHelper(note);
         else
             noTone(BUZZER_PIN);
 
@@ -54,7 +59,14 @@ public:
 
     static constexpr u8 BUZZER_PIN = 3;
 
-private:
+public:
+    void toneHelper(u16 freq)
+    {
+        if (soundIsEnabled)
+            tone(BUZZER_PIN, freq);
+    }
+
+public:
     Melody mel;
     u16 numNotes;
     u32 msPerSlice;
