@@ -538,7 +538,7 @@ void settingsUpdate(const Input& input)
                     &gameController.lcd.brightness,
                     0,
                     255,
-                    10,
+                    20,
                     &refreshBrightness
                 }
             }
