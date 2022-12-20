@@ -255,13 +255,13 @@ void mainMenuUpdate(const Input& input)
         NumPositions,
     };
 
-    /* clang-format off */
     static constexpr const char* MENU_DESCRIPTORS[NumPositions] = {
         [StartGame] = DOWN_ARROW_STR " Start Game",
-        [Leaderboard]  = UP_DOWN_ARROW_STR " Leaderboard",
-        [Settings]  = UP_DOWN_ARROW_STR " Settings",
-        [About]     = "^ About",
+        [Leaderboard] = UP_DOWN_ARROW_STR " Leaderboard",
+        [Settings] = UP_DOWN_ARROW_STR " Settings",
+        [About] = "^ About",
     };
+    /* clang-format off */
     static constexpr State MENU_TRANSITION_STATES[NumPositions] = {
         [StartGame] = {
             &gameUpdate,
@@ -269,7 +269,7 @@ void mainMenuUpdate(const Input& input)
             true,
             {
                 .game = {
-                    {0, 0},
+                    { 0, 0 },
                     0,
                     0,
                     1,
@@ -504,14 +504,14 @@ void settingsUpdate(const Input& input)
         NumPositions,
     };
 
-    /* clang-format off */
     static constexpr const char* SETTINGS_DESCRIPTORS[NumPositions] = {
-        [Contrast]   = DOWN_ARROW_STR " Contrast",
+        [Contrast] = DOWN_ARROW_STR " Contrast",
         [Brightness] = UP_DOWN_ARROW_STR " Brightness",
         [Intensity] = UP_DOWN_ARROW_STR " Intensity",
         [Sound] = UP_DOWN_ARROW_STR " Sound",
         [DefaultState] = "^ Default state",
     };
+    /* clang-format off */
     static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
         [Contrast] = {
             &sliderUpdate,
