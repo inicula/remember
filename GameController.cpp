@@ -3,6 +3,7 @@
 
 /* Typedefs */
 using State = GameController::State;
+using Position = GameController::Position;
 
 /* Structs */
 struct StorageEntry {
@@ -48,6 +49,7 @@ static void highlightPress(JoystickController::Press);
 GameController gameController;
 
 /* Constexpr variables */
+static constexpr u8 MAT_SIZE = GameController::MATRIX_SIZE;
 static constexpr u16 GREET_MELODY_DURATION = 10000;
 static constexpr u8 INPUT_SOUND_DUR = 50;
 static constexpr const char* STR_FMT = "%-16s";
@@ -124,8 +126,7 @@ static SpecialChar SPECIAL_CHARS[] = {
 /* Static variables */
 static char printfBuffer[PRINTF_BUFSIZE] = {};
 static GameController::LeaderboardEntry currentPlayer = { "         ", 0 };
-static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixRowIndices = {};
-static Tiny::Array<u8, GameController::MATRIX_SIZE> matrixColIndices = {};
+static Tiny::Array<Position, MAT_SIZE * MAT_SIZE> matrixOrder = {};
 static MelodyPlayer mp(CONTRAPUNCTUS_1, GREET_MELODY_DURATION);
 
 template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&... args)
@@ -351,7 +352,6 @@ void gameUpdate(const Input& input)
         ShowLevel,
         Playing,
     };
-    using Position = GameController::Position;
 
     auto& lc = gameController.matrix.controller;
     auto& state = gameController.state;
@@ -368,12 +368,11 @@ void gameUpdate(const Input& input)
             printfLCD(1, "%-8d%8d", params.score, maxReviews - params.usedReviews);
 
             randomSeed(micros());
-            Tiny::shuffle(matrixRowIndices);
-            Tiny::shuffle(matrixColIndices);
+            Tiny::shuffle(matrixOrder);
 
             lc.clearDisplay(0);
             params.subState = u8(State::ShowLevel);
-            params.player = { i8(matrixColIndices[0]), i8(matrixRowIndices[0]) };
+            params.player = matrixOrder[0];
 
             break;
         case u8(State::ShowLevel):
@@ -394,14 +393,14 @@ void gameUpdate(const Input& input)
         const u32 intervalNum = (input.currentTs - state.beginTs) / onTime;
         const auto oddInterval = intervalNum % 2;
         if (oddInterval && ((intervalNum + 1) / 2) == (params.tileIdx + 1u)) {
-            if (params.tileIdx < params.level)
-                lc.setLed(0, matrixRowIndices[params.tileIdx],
-                    matrixColIndices[params.tileIdx], true);
+            if (params.tileIdx < min(GameController::MAX_LEVEL_AMOUNT, params.level))
+                lc.setLed(
+                    0, matrixOrder[params.tileIdx].y, matrixOrder[params.tileIdx].x, true);
 
             ++params.tileIdx;
         }
 
-        if (params.tileIdx == params.level + 1) {
+        if (params.tileIdx == (min(GameController::MAX_LEVEL_AMOUNT, params.level) + 1)) {
             state.entry = true;
             params.subState = u8(State::Playing);
         }
@@ -415,7 +414,7 @@ void gameUpdate(const Input& input)
 
             state.entry = true;
             state.beginTs = input.currentTs;
-            params.player = { i8(matrixColIndices[0]), i8(matrixRowIndices[0]) };
+            params.player = matrixOrder[0];
             params.tileIdx = 0;
             params.subState = u8(State::ShowLevel);
             ++params.usedReviews;
@@ -445,10 +444,11 @@ void gameUpdate(const Input& input)
         params.player = params.player.clamp(0, GameController::MATRIX_SIZE - 1);
 
         if (oldPos != params.player) {
-            const auto yTileIdx = Tiny::find(matrixRowIndices, oldPos.y);
-            const auto xTileIdx = Tiny::find(matrixColIndices, oldPos.x);
+            const auto oldPosOrderIdx = Tiny::find(
+                matrixOrder, oldPos, [](Position p1, Position p2) { return p1 == p2; });
 
-            if (xTileIdx != yTileIdx || xTileIdx >= params.level || xTileIdx < params.captured)
+            if (oldPosOrderIdx >= min(GameController::MAX_LEVEL_AMOUNT, params.level)
+                || oldPosOrderIdx < params.captured)
                 lc.setLed(0, oldPos.y, oldPos.x, false);
 
             lc.setLed(0, params.player.y, params.player.x, true);
@@ -457,11 +457,7 @@ void gameUpdate(const Input& input)
         if (input.joyPress == JoystickController::Press::Short) {
             highlightPress(input.joyPress);
 
-            if (params.player
-                == Position {
-                    i8(matrixColIndices[params.captured]),
-                    i8(matrixRowIndices[params.captured]),
-                }) {
+            if (params.player == matrixOrder[params.captured]) {
                 ++params.captured;
             } else {
                 const auto score = params.score;
@@ -471,7 +467,7 @@ void gameUpdate(const Input& input)
                 break;
             }
 
-            if (params.captured == params.level) {
+            if (params.captured == min(GameController::MAX_LEVEL_AMOUNT, params.level)) {
                 state.entry = true;
                 state.beginTs = input.currentTs;
                 params = {
@@ -867,8 +863,8 @@ GameController::GameController()
 void GameController::init()
 {
     /* Fill index lists */
-    Tiny::iota(matrixRowIndices);
-    Tiny::iota(matrixColIndices);
+    for (i8 i = 0; i < GameController::MATRIX_SIZE * GameController::MATRIX_SIZE; ++i)
+        matrixOrder[size_t(i)] = Position { i8(i / 8), i8(i % 8) };
 
     /* Read game info/settings from storage */
     size_t eepromAddr = 0;

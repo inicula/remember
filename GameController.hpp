@@ -120,6 +120,7 @@ public:
     static constexpr i32 DEFAULT_BRIGHTNESS = 255;
     static constexpr i32 DEFAULT_MATRIX_INTENSITY = 8;
     static constexpr u8 LEADERBOARD_SIZE = 5;
+    static constexpr u8 MAX_LEVEL_AMOUNT = MATRIX_SIZE * MATRIX_SIZE;
     static constexpr LeaderboardEntry LEADERBOARD_ENTRY_NONE = { "**********", 0 };
     static constexpr LeaderboardEntry DEFAULT_LEADERBOARD[] = {
         LEADERBOARD_ENTRY_NONE,

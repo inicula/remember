@@ -80,10 +80,11 @@ template <typename T, size_t N> void shuffle(Array<T, N>& array)
         Tiny::swap(array[i], array[size_t(random(i + 1))]);
 }
 
-template <typename T, typename U, size_t N> size_t find(const Array<T, N>& arr, const U& value)
+template <typename T, typename U, typename Callable, size_t N>
+size_t find(const Array<T, N>& arr, const U& value, Callable c)
 {
     for (size_t i = 0; i < N; ++i) {
-        if (arr[i] == value)
+        if (c(arr[i], value))
             return i;
     }
 
