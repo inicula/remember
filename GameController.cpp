@@ -23,7 +23,7 @@ constexpr GameController::LeaderboardEntry GameController::DEFAULT_LEADERBOARD[]
 
 /* Template function declarations */
 template <typename... Ts> static void printfLCD(u8, const char*, Ts&&...);
-template <bool INITIALIZE = false> static void setDefaultState(const Input&);
+template <bool INIT_EEPROM = false> static void setDefaultState(const Input&);
 
 /* Function declarations */
 static void readEEPROM(size_t, void*, size_t);
@@ -136,11 +136,11 @@ template <typename... Ts> static void printfLCD(u8 row, const char* fmt, Ts&&...
     gameController.lcd.controller.print(&printfBuffer[0]);
 }
 
-template <bool INITIALIZE> void setDefaultState(const Input&)
+template <bool INIT_EEPROM> void setDefaultState(const Input&)
 {
     size_t eepromAddr = 0;
     for (auto& data : STORAGE_DATA) {
-        if constexpr (INITIALIZE) {
+        if constexpr (INIT_EEPROM) {
             writeEEPROM(eepromAddr, data.defaultAddr, data.size);
             eepromAddr += data.size;
         }
