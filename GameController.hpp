@@ -4,12 +4,14 @@
 #include "LedControl.h"
 #include "LiquidCrystal.h"
 
+/* Structs */
 struct Input {
     u32 currentTs;
     JoystickController::Press joyPress;
     JoystickController::Direction joyDir;
 };
 
+/* Typedefs */
 using i8 = int8_t;
 using i16 = int16_t;
 using i32 = int32_t;
