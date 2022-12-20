@@ -36,4 +36,4 @@ have to remember the order of more of these circles.
 
 ## [Picture](https://drive.google.com/file/d/1TN9rNMHNlCbxurM2p6BK9AJOO72OQ_JR/view?usp=sharing)
 
-## [Video](https://0x0.st)
+## [Video](https://drive.google.com/file/d/16EsSAvPBSGKyNsAruTqpi7a-scaAau5-/view?usp=sharing)
