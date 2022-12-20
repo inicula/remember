@@ -687,6 +687,13 @@ void sliderUpdate(const Input& input)
     if (state.entry) {
         state.entry = false;
 
+        if (params.value == &gameController.matrix.intensity) {
+            for (i8 i = 0; i < GameController::MATRIX_SIZE; ++i) {
+                for (i8 j = 0; j < GameController::MATRIX_SIZE; ++j)
+                    gameController.matrix.controller.setLed(0, i, j, true);
+            }
+        }
+
         printfLCD(0, STR_FMT, params.description);
         printfLCD(1, "%-10c%6d", UP_DOWN_ARROW, *params.value);
     }
@@ -705,8 +712,10 @@ void sliderUpdate(const Input& input)
         params.callback(newValue);
     }
 
-    if (input.joyDir == JoystickController::Direction::Left)
+    if (input.joyDir == JoystickController::Direction::Left) {
+        gameController.matrix.controller.clearDisplay(0);
         state = { &settingsUpdate, 0, true, {} };
+    }
 }
 
 void nameSelectionUpdate(const Input& input)
