@@ -262,56 +262,6 @@ void mainMenuUpdate(const Input& input)
         [Settings] = UP_DOWN_ARROW_STR " Settings",
         [About] = "^ About",
     };
-    /* clang-format off */
-    static constexpr State MENU_TRANSITION_STATES[NumPositions] = {
-        [StartGame] = {
-            &gameUpdate,
-            0,
-            true,
-            {
-                .game = {
-                    { 0, 0 },
-                    0,
-                    0,
-                    1,
-                    0,
-                    0,
-                    0,
-                }
-            }
-        },
-        [Leaderboard] = {
-            &leaderboardUpdate,
-            0,
-            true,
-            {
-                .leaderboard = {
-                    0,
-                }
-            }
-        },
-        [Settings] = {
-            &settingsUpdate,
-            0,
-            true,
-            {}
-        },
-        [About] = {
-            &aboutUpdate,
-            0,
-            true,
-            {
-                .about = {
-                    0,
-                    0,
-                    0,
-                    nullptr,
-                    nullptr,
-                }
-            }
-        },
-    };
-    /* clang-format on */
 
     auto& state = gameController.state;
     auto& params = gameController.state.params.mainMenu;
@@ -337,7 +287,64 @@ void mainMenuUpdate(const Input& input)
     }
 
     if (input.joyDir == JoystickController::Direction::Right) {
-        state = MENU_TRANSITION_STATES[params.pos];
+        switch (params.pos) {
+        case StartGame: {
+            state = State {
+                &gameUpdate,
+                0,
+                true,
+                {
+                    .game = {
+                        { 0, 0 },
+                        0,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                    }
+                },
+            };
+            break;
+        }
+        case Leaderboard: {
+            state = State {
+                &leaderboardUpdate,
+                0,
+                true,
+                {
+                    .leaderboard = {
+                        0,
+                    }
+                },
+            };
+            break;
+        }
+        case Settings: {
+            state = State { &settingsUpdate, 0, true, {} };
+            break;
+        }
+        case About: {
+            state = State {
+                &aboutUpdate,
+                0,
+                true,
+                {
+                    .about = {
+                        0,
+                        0,
+                        0,
+                        nullptr,
+                        nullptr,
+                    }
+                },
+            };
+            break;
+        }
+        default:
+            UNREACHABLE;
+        }
+
         state.beginTs = input.currentTs;
     }
 }
@@ -507,76 +514,6 @@ void settingsUpdate(const Input& input)
         [Sound] = UP_DOWN_ARROW_STR " Sound",
         [DefaultState] = "^ Default state",
     };
-    /* clang-format off */
-    static constexpr State SETTING_TRANSITION_STATES[NumPositions] = {
-        [Contrast] = {
-            &sliderUpdate,
-            0,
-            true,
-            {
-                .slider = {
-                    "< CONTRAST",
-                    &gameController.lcd.contrast,
-                    0,
-                    255,
-                    10,
-                    &refreshContrast
-                }
-            }
-        },
-        [Brightness] = {
-            &sliderUpdate,
-            0,
-            true,
-            {
-                .slider = {
-                    "< BRIGHTNESS",
-                    &gameController.lcd.brightness,
-                    0,
-                    255,
-                    20,
-                    &refreshBrightness
-                }
-            }
-        },
-        [Intensity] = {
-            &sliderUpdate,
-            0,
-            true,
-            {
-                .slider = {
-                    "< INTENSITY",
-                    &gameController.matrix.intensity,
-                    0,
-                    15,
-                    1,
-                    &refreshIntensity
-                }
-            }
-        },
-        [Sound] = {
-            &sliderUpdate,
-            0,
-            true,
-            {
-                .slider = {
-                    "< SOUND",
-                    &soundIsEnabled,
-                    0,
-                    1,
-                    1,
-                    nullptr
-                }
-            }
-        },
-        [DefaultState] = {
-            &setDefaultState,
-            {},
-            {},
-            {}
-        }
-    };
-    /* clang-format on */
 
     auto& state = gameController.state;
     auto& params = gameController.state.params.settings;
@@ -603,8 +540,88 @@ void settingsUpdate(const Input& input)
         printfLCD(1, STR_FMT, SETTINGS_DESCRIPTORS[params.pos]);
     }
 
-    if (input.joyDir == JoystickController::Direction::Right)
-        state = SETTING_TRANSITION_STATES[params.pos];
+    if (input.joyDir == JoystickController::Direction::Right) {
+        switch (params.pos) {
+        case Contrast: {
+            state = State {
+                &sliderUpdate,
+                0,
+                true,
+                {
+                    .slider = {
+                        "< CONTRAST",
+                        &gameController.lcd.contrast,
+                        0,
+                        255,
+                        10,
+                        &refreshContrast,
+                    }
+                },
+            };
+            break;
+        }
+        case Brightness: {
+            state = State {
+                &sliderUpdate,
+                0,
+                true,
+                {
+                    .slider = {
+                        "< BRIGHTNESS",
+                        &gameController.lcd.brightness,
+                        0,
+                        255,
+                        20,
+                        &refreshBrightness,
+                    }
+                },
+            };
+            break;
+        }
+        case Intensity: {
+            state = State {
+                &sliderUpdate,
+                0,
+                true,
+                {
+                    .slider = {
+                        "< INTENSITY",
+                        &gameController.matrix.intensity,
+                        0,
+                        15,
+                        1,
+                        &refreshIntensity,
+                    }
+                },
+            };
+            break;
+        }
+        case Sound: {
+            state = State {
+                &sliderUpdate,
+                0,
+                true,
+                {
+                    .slider = {
+                        "< SOUND",
+                        &soundIsEnabled,
+                        0,
+                        1,
+                        1,
+                        nullptr,
+                    }
+                },
+            };
+            break;
+        }
+        case DefaultState: {
+            state = State { &setDefaultState, {}, {}, {} };
+            break;
+        }
+        default:
+            UNREACHABLE;
+        }
+    }
     if (input.joyDir == JoystickController::Direction::Left)
         state = DEFAULT_MENU_STATE;
 }
