@@ -158,20 +158,16 @@ template <bool INIT_EEPROM> void setDefaultState(const Input&)
 
 static void readEEPROM(size_t eepromBaseAddr, void* addr, size_t count)
 {
-    u8 buffer[count];
+    u8* bytes = (u8*)addr;
     for (size_t i = 0; i < count; ++i)
-        buffer[i] = EEPROM.read(i16(eepromBaseAddr + i));
-
-    memcpy(addr, &buffer[0], count);
+        bytes[i] = EEPROM.read(i16(eepromBaseAddr + i));
 }
 
 static void writeEEPROM(size_t eepromBaseAddr, const void* addr, size_t count)
 {
-    u8 buffer[count];
-    memcpy(&buffer[0], addr, count);
-
+    u8* bytes = (u8*)addr;
     for (size_t i = 0; i < count; ++i)
-        EEPROM.update(i16(eepromBaseAddr + i), buffer[i]);
+        EEPROM.update(i16(eepromBaseAddr + i), bytes[i]);
 }
 
 void refreshContrast(i32 value) { analogWrite(GameController::CONTRAST_PIN, i16(value)); }
