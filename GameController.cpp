@@ -158,14 +158,14 @@ template <bool INIT_EEPROM> void setDefaultState(const Input&)
 
 static void readEEPROM(size_t eepromBaseAddr, void* addr, size_t count)
 {
-    u8* bytes = (u8*)addr;
+    auto bytes = (u8*)addr;
     for (size_t i = 0; i < count; ++i)
         bytes[i] = EEPROM.read(i16(eepromBaseAddr + i));
 }
 
 static void writeEEPROM(size_t eepromBaseAddr, const void* addr, size_t count)
 {
-    u8* bytes = (u8*)addr;
+    auto bytes = (const u8*)addr;
     for (size_t i = 0; i < count; ++i)
         EEPROM.update(i16(eepromBaseAddr + i), bytes[i]);
 }
